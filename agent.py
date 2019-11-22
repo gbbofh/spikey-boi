@@ -11,6 +11,7 @@ class Agent():
 
     def __init__(self, ne=0, ni=0):
 
+        # Initialize neural network, target position, and distance
         self.net = network.Network(ne, ni, 3, 2)
         self.left_wheel = 0.0
         self.right_wheel = 0.0
@@ -21,12 +22,16 @@ class Agent():
         self.ne = ne
         self.ni = ni
 
+        # Create a graphic for the agent
         self.gfx = Turtle()
         self.gfx.speed(0)
         self.gfx.shape('square')
         self.gfx.color('red')
         self.gfx.goto(0, 0)
 
+        # Create a graphic for the target
+        # All this code should get ripped out into its own class
+        # eventually.
         self.target_gfx = Turtle()
         self.target_gfx.speed(0)
         self.target_gfx.shape('circle')
@@ -34,18 +39,29 @@ class Agent():
         self.target_gfx.penup()
         self.target_gfx.goto(self.target_x, self.target_y)
 
+        # Used for testing -- now defunct
         self.motor_frequency = np.zeros(2)
         self.motor_accum_window = 1
 
 
     def update(self):
+        # Generate stochastic inputs for all neurons in the network
+        self.net.input[0 : self.net.numEx] = 5.0 * stat.norm.rvs(size=self.net.numEx)
+        self.net.input[self.net.numEx : ] = 2.0 * stat.norm.rvs(size=self.net.numIn)
+
+        # Find the distance to the target
         dX = self.target_x - self.gfx.xcor()
         dY = self.target_y - self.gfx.ycor()
         self.target_dist = math.sqrt(dX ** 2 + dY ** 2)
 
-        self.net.input[0 : self.net.numEx] = 5.0 * stat.norm.rvs(size=self.net.numEx)
-        self.net.input[self.net.numEx : ] = 2.0 * stat.norm.rvs(size=self.net.numIn)
+        # We want the sensory input to the agent to increase as it draws nearer
+        # to the target -- 450 was determined such that the smallest input is
+        # approximately zero, and the largest input is approximately 10 when
+        # the agent is right next to the target
         self.net.sensoryInput[0] = min(450.0 / self.target_dist, 10.0)
+
+        # Determine the angle between the direction the agent is facing
+        # and the target
         angle = math.atan2(dY, dX)
         heading = self.gfx.heading() * math.pi / 180
         heading = heading if heading <= math.pi else heading - math.pi
@@ -53,10 +69,11 @@ class Agent():
             angle = angle - heading
         else:
             angle = heading - angle
+
         self.net.sensoryInput[1] = 2 * angle
         self.net.sensoryInput[2] = -2 * angle
-        print(self.net.sensoryInput / 2)
 
+        # Update the network with the newly generated inputs
         self.net.update()
 
         # TESTING SPIKE TIMING -> SPIKE FREQ
@@ -74,9 +91,13 @@ class Agent():
 
         # END TESTING
 
+        # Feed the output of the motor neurons into the "motors" for our agent
         self.left_wheel = self.net.motorOutput[0] * 5
         self.right_wheel = self.net.motorOutput[1] * 5
 
+        # L > R -> turn right
+        # L < R -> turn left
+        # L == R -> go forward
         self.gfx.right((self.left_wheel - self.right_wheel) * 2.0)
         self.gfx.forward((self.left_wheel + self.right_wheel))
 
@@ -104,8 +125,6 @@ def main():
     synD.goto(-390, 290)
     synD.hideturtle()
 
-    # a = Agent(276, 22)
-    # a = Agent(50, 22)
     a = Agent(15, 8)
 
     # I hate this, but it works well and keeps the sim from lagging too much
@@ -128,6 +147,8 @@ def main():
         a.target_y = y
         a.target_gfx.goto(a.target_x, a.target_y)
 
+    # UNCOMMENT THIS LINE TO ENABLE DRAWING
+    # FOR THE SYNAPTIC WEIGHTS
     # win.ontimer(draw_synapses, 0)
     win.onclick(set_target)
 
