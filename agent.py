@@ -35,7 +35,6 @@ class Agent():
         self.target_gfx.goto(self.target_x, self.target_y)
 
         self.motor_frequency = np.zeros(2)
-        #self.motor_accum_window = 0
         self.motor_accum_window = 1
 
 
@@ -46,47 +45,17 @@ class Agent():
 
         self.net.input[0 : self.net.numEx] = 5.0 * stat.norm.rvs(size=self.net.numEx)
         self.net.input[self.net.numEx : ] = 2.0 * stat.norm.rvs(size=self.net.numIn)
-        # self.net.motorOutput *= 0
-
-        # self.net.sensoryInput[0] = max(self.target_dist * 8.0 / dX, self.target_dist)
-        # self.net.sensoryInput[1] = max(self.target_dist * 8.0 / dY, self.target_dist)
-
-        #self.net.sensoryInput[0] = dX * 5.0 / self.target_dist
-        #self.net.sensoryInput[1] = dY * 5.0 / self.target_dist
-        # self.net.sensoryInput[2] = min(160.0 / self.target_dist, 8.0)
-        # self.net.sensoryInput[0] = min(28800.0 / self.target_dist, 10.0)
         self.net.sensoryInput[0] = min(450.0 / self.target_dist, 10.0)
-        # Testing angle/angle/magnitude instead of vector/vector/length
-        # This angle didn't work because it doesn't calculate the angle
-        # of the vector between the two -- just their relative angles
-        # I am 100% stupid.
-        # angle = (self.gfx.towards(self.target_gfx) - self.gfx.heading()) * math.pi / 180
-        angle = math.atan2(dY, dX) # Not sure if this works
+        angle = math.atan2(dY, dX)
         heading = self.gfx.heading() * math.pi / 180
         heading = heading if heading <= math.pi else heading - math.pi
         if abs(angle) > abs(heading):
             angle = angle - heading
         else:
             angle = heading - angle
-        # if angle > 0:
-        #     angle -= math.pi
-        # else:
-        #     angle += math.pi
-        #print(angle)
-
-        # angle = angle if angle <= 180 else -(angle - 180)
         self.net.sensoryInput[1] = 2 * angle
         self.net.sensoryInput[2] = -2 * angle
         print(self.net.sensoryInput / 2)
-        # self.net.sensoryInput[1] = min(1 / angle, 8.0)
-        # self.net.sensoryInput[2] = min(1 / (2 * math.pi - angle), 8.0)
-        #self.net.sensoryInput[2] = -1.2 * angle
-        #self.net.sensoryInput[3] = dX * -5.0 / self.target_dist
-        #self.net.sensoryInput[4] = dY * -5.0 / self.target_dist
-
-        # self.net.sensoryInput[3] = max(self.target_dist * -8.0 / dX, -self.target_dist)
-        # self.net.sensoryInput[4] = max(self.target_dist * -8.0 / dY, -self.target_dist)
-
 
         self.net.update()
 
@@ -108,13 +77,6 @@ class Agent():
         self.left_wheel = self.net.motorOutput[0] * 5
         self.right_wheel = self.net.motorOutput[1] * 5
 
-        # TODO: Turn angle as the delta of the outputs
-        # And move forward by the sum of the outputs
-        # A cheap hack, but may work?
-        # The reasoning for this is that as the two wheels on a robot turn,
-        # if one is turning and the other is not, then it will turn towards
-        # the stationary wheel. Conversely, if they are both turning at the
-        # same rate, then the robot would not turn.
         self.gfx.right((self.left_wheel - self.right_wheel) * 2.0)
         self.gfx.forward((self.left_wheel + self.right_wheel))
 
@@ -173,12 +135,6 @@ def main():
         a.update()
         xpos = a.gfx.xcor()
         ypos = a.gfx.ycor()
-        # if a.gfx.xcor() > 390 or a.gfx.ycor() > 300:
-        #     a.gfx.goto(0, 0)
-        #     a.gfx.clear()
-        # if a.gfx.xcor() < -400 or a.gfx.ycor() < -290:
-        #     a.gfx.goto(0, 0)
-        #     a.gfx.clear()
         if xpos > 390 or xpos < -390:
             a.gfx.goto(-(xpos + 20 * np.sign(-xpos)), ypos)
             a.gfx.clear()
