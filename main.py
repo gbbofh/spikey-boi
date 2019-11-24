@@ -9,7 +9,7 @@ import matplotlib.animation as animation
 #k = 100
 timeScale = 500
 #net = network.Network(7 * k, 3 * k)
-net = network.Network(25, 11, 0, 0)
+net = network.Network(380, 22, 0, 0)
 #net = network.Network(8 * k, 2 * k)
 
 fig = plot.figure(figsize=(6,6))

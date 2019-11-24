@@ -2,17 +2,40 @@ import network
 import numpy as np
 import scipy.stats as stat
 
+import matplotlib.pyplot as plot
+import matplotlib.animation as animation
+
 import math
 
 from turtle import Screen
 from turtle import Turtle
+
+# NOTE: Upon examining behaviour on the smallest possible network I can feasibly
+# see solving this problem (2 inputs -> 2 outputs), it appears that the "motor"
+# neurons are being trained to drive the "sensory" neurons, instead of the other
+# way around. A simple fix for this may be to separate everything into three
+# layers:
+#  _________________
+# | i i i ... i i i | <--- unidirectional input layer
+# |_________________|
+# | | | | | | | | | |
+#  _________________
+# | h->h<->h h h h  |
+# | | /|   |/ \|/   | <--- recurrent hidden layer
+# | h<-h-->h<->h    |
+# |_________________|
+# | | | | | | | | | |
+#  _________________
+# | o o o ... o o o | <--- unidirectional output layer
+# |_________________|
 
 class Agent():
 
     def __init__(self, ne=0, ni=0):
 
         # Initialize neural network, target position, and distance
-        self.net = network.Network(ne, ni, 3, 2)
+        # self.net = network.Network(ne, ni, 4, 2)
+        self.net = network.Network(ne, ni, ne / 2,  ne / 2)
         self.left_wheel = 0.0
         self.right_wheel = 0.0
         self.target_x = np.random.randint(-390, 390)
@@ -40,8 +63,10 @@ class Agent():
         self.target_gfx.goto(self.target_x, self.target_y)
 
         # Used for testing -- now defunct
-        self.motor_frequency = np.zeros(2)
-        self.motor_accum_window = 1
+        # self.motor_frequency = np.zeros(2)
+        # self.motor_accum_window = 1
+
+        self.food_reward = 0.0
 
 
     def update(self):
@@ -58,20 +83,24 @@ class Agent():
         # to the target -- 450 was determined such that the smallest input is
         # approximately zero, and the largest input is approximately 10 when
         # the agent is right next to the target
-        self.net.sensoryInput[0] = min(450.0 / self.target_dist, 10.0)
+        # self.net.sensoryInput[0] = min(450.0 / self.target_dist, 10.0)
 
-        # Determine the angle between the direction the agent is facing
-        # and the target
-        angle = math.atan2(dY, dX)
-        heading = self.gfx.heading() * math.pi / 180
-        heading = heading if heading <= math.pi else heading - math.pi
-        if abs(angle) > abs(heading):
-            angle = angle - heading
-        else:
-            angle = heading - angle
+        angle = self.gfx.towards(self.target_gfx)
+        heading = self.gfx.heading()
+        angle = angle - heading
+        angle += 180
+        angle = angle if angle <= 180 else angle - 360
+        angle *= math.pi / 180
 
-        self.net.sensoryInput[1] = 2 * angle
-        self.net.sensoryInput[2] = -2 * angle
+        self.net.sensoryInput[0] = 2 * angle
+        self.net.sensoryInput[1] = -2 * angle
+
+        # self.net.sensoryInput[1] = 2 * angle
+        # self.net.sensoryInput[2] = -2 * angle
+        # self.net.sensoryInput[3] = self.food_reward
+
+        self.food_reward -= 0.001
+        self.food_reward = max(0.0, self.food_reward)
 
         # Update the network with the newly generated inputs
         self.net.update()
@@ -84,10 +113,11 @@ class Agent():
 
         # self.motor_accum_window += 1
 
-        # if self.motor_accum_window % 100:
-        #     self.left_wheel = self.motor_frequency[0] / self.motor_accum_window
-        #     self.right_wheel = self.motor_frequency[1] / self.motor_accum_window
+        # if self.motor_accum_window % 10:
+        #     self.left_wheel = self.motor_frequency[0] / 10
+        #     self.right_wheel = self.motor_frequency[1] / 10
         #     self.motor_frequency *= 0
+        #     motor_accum_window = 0
 
         # END TESTING
 
@@ -125,7 +155,16 @@ def main():
     synD.goto(-390, 290)
     synD.hideturtle()
 
-    a = Agent(15, 8)
+    textD = Turtle()
+    textD.speed(0)
+    textD.color((1.0, 1.0, 1.0))
+    textD.penup()
+    textD.goto(180, -290)
+    textD.hideturtle()
+
+    #a = Agent(15, 8)
+    #a = Agent(14, 6)
+    a = Agent(4, 0)
 
     # I hate this, but it works well and keeps the sim from lagging too much
     def draw_synapses():
@@ -149,7 +188,7 @@ def main():
 
     # UNCOMMENT THIS LINE TO ENABLE DRAWING
     # FOR THE SYNAPTIC WEIGHTS
-    # win.ontimer(draw_synapses, 0)
+    win.ontimer(draw_synapses, 0)
     win.onclick(set_target)
 
     while True:
@@ -169,12 +208,21 @@ def main():
             a.target_y = np.random.randint(-240, 240)
             a.target_dist = math.sqrt(a.target_x ** 2 + a.target_y ** 2)
             a.target_gfx.goto(a.target_x, a.target_y)
+            a.food_reward = 10.0
 
             # Attempt at reinforcing on consumption of food
             a.net.synapses = np.clip(a.net.synapses * 1.1, -1.0, 1.0)
 
         sD.clearstamps()
         sD.goto(-390, -285)
+
+        textD.clear()
+        textD.goto(180, -290)
+        angle = a.net.sensoryInput[1] * 180 / (2 * math.pi)
+        textD.write('Angle: {}, {}'.format(str(angle),
+                                            str(-angle)),
+                                            font=('Arial', 11, 'normal'))
+
         for i,v in enumerate(a.net.voltage):
             nv = (v + 65) / 95
             nv = min(max(0.0, nv), 1.0)
