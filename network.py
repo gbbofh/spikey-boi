@@ -1,9 +1,93 @@
 import numpy
 import scipy.stats as stats
 
-def isin(el, te, au=False, invert=False):
-    el = numpy.asarray(el)
-    return numpy.in1d(el, te, au, invert=invert).reshape(el.shape)
+# TODO: Consider making a base class since this and Network
+# share so much code in common -- the only real difference is
+# the lack of synapses for the layer.
+class Layer():
+
+    STDP_INIT = 0.2
+    STDP_DECAY = 0.2
+    SYNAPSE_DECAY = 0.0001
+
+    """
+    Implements a single layer of Izhikevich spiking neurons
+
+    The neurons in this layer are disjoint from one another with no
+    synaptic connections between them. This is useful for representing
+    things like sensory input and motor output.
+    In short, this is basically Network with the synapses and associated
+    STDP portions gutten. We keep the STDP values for the neurons so that
+    connections can form autonomously with the recurrent network that this
+    feeds into, or feeds from. Synapses will be managed by that layer, though
+    so that all the STDP code can stay in one place.
+    In the future this may be replaced with a Network that simply
+    does not allow for connections between neurons in the same layer
+    """
+    def __init__(self, numEx = 0, numIn = 0):
+        """
+        Constructs an unconnected layer of spiking neurons
+
+        Parameters:
+        numEx (int): The number of excitatory neurons to generate
+        numIn (int): The number of inhibitory neurons to generate
+        """
+
+        self.numEx = numEx
+        self.numIn = numIn
+
+        self.totalNum = numEx + numIn
+
+        # For brevity
+        tNum = self.totalNum
+
+        r = stats.uniform.rvs(size=tNum)
+
+        self.scale = numpy.ones(tNum)
+        self.uSens = numpy.ones(tNum)
+        self.reset = numpy.ones(tNum)
+        self.uReset = numpy.ones(tNum)
+
+        self.scale[0 : numEx] *= 0.02
+        self.scale[numEx : ] *= 0.02 + 0.08 * r[numEx : ]
+        self.uSens[0 : numEx] *= 0.2
+        self.uSens[numEx : ] *= 0.25 - 0.05 * r[numEx : ]
+        self.reset[0 : numEx] *= -65 + 15 * r[0 : numEx] ** 2
+        self.reset[numEx : ] *= -65
+        self.uReset[0 : numEx] *= 8 - 6 * r[0 : numEx] ** 2
+        self.uReset[numEx : ] *= 2
+
+        self.voltage = numpy.full(tNum, -65.0)
+        self.recovery = numpy.multiply(self.voltage, self.uSens)
+        self.input = numpy.zeros(tNum)
+
+        self.stdp = numpy.zeros(tNum)
+
+        self.pSpikes = numpy.where(self.voltage >= 30.0)[0]
+
+
+    def update(self, inputs = None):
+        if inputs:
+            self.input = numpy.array(inputs)
+
+        spikes = numpy.where(self.voltage >= 30.0)[0]
+
+        self.voltage[spikes] = self.reset[spikes]
+        self.recovery[spikes] += self.uReset[spikes]
+
+        self.voltage += 0.5 * (0.04 * self.voltage ** 2 +
+                       5.0 * self.voltage + 140 - self.recovery + self.input)
+        self.voltage += 0.5 * (0.04 * self.voltage ** 2 +
+                       5.0 * self.voltage + 140 - self.recovery + self.input)
+        self.recovery += self.scale * (self.voltage * self.uSens - self.recovery)
+
+        self.voltage[numpy.where(self.voltage >= 30.0)] = 30.0
+
+        self.stdp *= Network.STDP_DECAY
+        self.stdp[spikes] = Network.STDP_INIT
+
+        self.pSpikes = spikes
+        return spikes
 
 
 class Network():

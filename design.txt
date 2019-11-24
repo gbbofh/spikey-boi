@@ -1,0 +1,35 @@
+With the separation of sensory input and motor output into separate structures
+in order to prevent them from directly interfering with one another, it raises
+some complications with regards to connectivity and learning. Whereas previously
+there could exist a single synaptic matrix which encoded the weights between
+all neurons in the network, we must now come up with a new mechanism that will
+allow for the network to continue to learn.
+
+First, why did we choose to separate input/output from the main network?
+The simple answer is that STDP was causing motor neurons to form connections
+which stimulated input neurons -- this is obviously not what we want, and it is
+not something which typically happens (to my knowledge) in biological nervous
+systems. It would be very unfortunate (and impractical) if attempting to move
+your left toe caused you to experience smell, for example.
+
+Now, in order to allow the network to determine what neurons should receive
+sensory input, and what neurons should be connected to motor output, I propose
+the following:
+
+In addition to the existing synaptic matrix for the recurrent network that is
+intended to drive behaviour, there will also exist two additional matrices,
+which will also be trained through STDP; one of which will be used for sensory
+input, and one for motor output. In theory, this should prevent backwards flow
+from motor output back to sensory input. An example of the matrices are as
+follows:
+
+Input:          Recurrent:      Output:
+|ir1 ir2|       |r1 r2 r3|      |ro1 ro2 ro3|
+|ir3 ir4|       |r4 r5 r6|      |ro4 ro5 ro6|
+|ir5 ir6|       |r7 r8 r9|
+
+Each column in the input matrix corresponds to an input neuron; every entry in a
+patricular column represents that input neurons synaptic connection to a neuron
+in the recurrent network (of which there are 3 in this example). Likewise, for
+every neuron in the recurrent network there is a column, which a synaptic weight
+for every neuron in the output layer
