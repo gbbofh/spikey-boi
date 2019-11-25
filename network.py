@@ -170,6 +170,8 @@ class Network():
 
         self.pSpikes = numpy.where(self.voltage >= 30.0)[0]
         self.noisy = True
+        self.sensorySpikes = numpy.where(self.sensory.voltage >= 30.0)[0]
+        self.motorSpikes = numpy.where(self.motor.voltage >= 30.0)[0]
 
 
     def update(self, inputs = None):
@@ -192,11 +194,13 @@ class Network():
         if inputs is not None:
             inputs = numpy.array(inputs)
         inputSpikes = self.sensory.update(inputs)
+        self.sensorySpikes = inputSpikes
 
         self.input = self.inputSynapses[inputSpikes, :].sum(axis=0)
 
         outputs = self.outputSynapses[spikes].sum(axis=0)
         motorSpikes = self.motor.update(outputs)
+        self.motorSpikes = motorSpikes
 
         if self.noisy:
             self.input[0 : self.numEx] += 5.0 * stats.norm.rvs(size=self.numEx)

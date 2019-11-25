@@ -7,6 +7,8 @@ import scipy.stats as stat
 import matplotlib.pyplot as plot
 import matplotlib.animation as animation
 
+import time
+
 #k = 100
 timeScale = 500
 #net = network.Network(7 * k, 3 * k)
