@@ -65,10 +65,17 @@ class Layer():
 
         self.pSpikes = numpy.where(self.voltage >= 30.0)[0]
 
+        self.noisy = True
+
 
     def update(self, inputs = None):
-        if inputs:
+
+        if inputs is not None:
             self.input = numpy.array(inputs)
+
+        if self.noisy:
+            self.input[0 : self.numEx] += 5.0 * stats.norm.rvs(size=self.numEx)
+            self.input[self.numEx : ] += 2.0 * stats.norm.rvs(size=self.numIn)
 
         spikes = numpy.where(self.voltage >= 30.0)[0]
 
@@ -104,29 +111,32 @@ class Network():
     random properties, as described in the paper
     'A Simple Model of Spiking Neurons' (2003).
     """
-    def __init__(self, numEx, numIn, inputs=0, outputs=0):
+    def __init__(self, numEx, numIn, sensory=Layer(), motor=Layer()):
         """
         Constructs a randomly connected spiking neural network
 
         Parameters:
         numEx (int): The number of excitatory neurons to generate
         numIn (int): The number of inhibitory neurons to generate
-        inputs (int): The number of input neurons
-        outputs (int): The number of output neurons
+        sensory (Layer): A layer of sensory neurons
+        motor (Layer): A layer of motor neurons
         """
+
+        self.sensory = sensory
+        self.motor = motor
 
         self.numEx = numEx
         self.numIn = numIn
-        totalNum = numEx + numIn
+        tNum = numEx + numIn
 
-        self.totalNum = totalNum
+        self.totalNum = tNum
 
-        r = stats.uniform.rvs(size=(totalNum))
+        r = stats.uniform.rvs(size=(tNum))
 
-        self.scale = numpy.ones(totalNum)
-        self.uSens = numpy.ones(totalNum)
-        self.reset = numpy.ones(totalNum)
-        self.uReset = numpy.ones(totalNum)
+        self.scale = numpy.ones(tNum)
+        self.uSens = numpy.ones(tNum)
+        self.reset = numpy.ones(tNum)
+        self.uReset = numpy.ones(tNum)
 
         # Initialize neuron parameters.
         # This will create both excitatory and inhibitory neurons
@@ -142,25 +152,27 @@ class Network():
         self.uReset[0 : numEx] *= 8 - 6 * r[0 : numEx] ** 2
         self.uReset[numEx : ] *= 2
 
-        self.synapses = 0.5 * stats.uniform.rvs(size=(totalNum, totalNum))
+        self.inputSynapses = 0.5 * stats.uniform.rvs(size=(sensory.totalNum, tNum))
+        self.inputSynapses[sensory.numEx :, :] *= -2.0
+
+        self.outputSynapses = 0.5 * stats.uniform.rvs(size=(tNum, motor.totalNum))
+        self.outputSynapses[numEx : ] *= -2.0
+
+        # Recurrent network synapses
+        self.synapses = 0.5 * stats.uniform.rvs(size=(tNum, tNum))
         self.synapses[numEx : ] *= -2.0
 
-        self.voltage = numpy.full(totalNum, -65.0)
+        self.voltage = numpy.full(tNum, -65.0)
         self.recovery = numpy.multiply(self.voltage, self.uSens)
-        self.input = numpy.zeros(totalNum)
+        self.input = numpy.zeros(tNum)
 
-        self.sensoryInput = numpy.ones(inputs)
-        self.motorOutput = numpy.zeros(outputs)
-        tmp = numpy.random.choice(numEx, inputs + outputs, replace=False)
-        self.sensorySyn = tmp[0 : inputs]
-        self.motorSyn = tmp[inputs : inputs + outputs]
-
-        self.stdp = numpy.zeros(totalNum)
+        self.stdp = numpy.zeros(tNum)
 
         self.pSpikes = numpy.where(self.voltage >= 30.0)[0]
+        self.noisy = True
 
 
-    def update(self):
+    def update(self, inputs = None):
         """
         Updates the membrane potential for all neurons in the network
 
@@ -177,7 +189,19 @@ class Network():
         # It is assumed that the input vector is cleared/reset
         # OUTSIDE of the network. This may change in the future
         # but right now stochastic inputs are generated in agent.py
-        self.input[self.sensorySyn] += self.sensoryInput
+        if inputs is not None:
+            inputs = numpy.array(inputs)
+        inputSpikes = self.sensory.update(inputs)
+
+        self.input = self.inputSynapses[inputSpikes, :].sum(axis=0)
+
+        outputs = self.outputSynapses[spikes].sum(axis=0)
+        motorSpikes = self.motor.update(outputs)
+
+        if self.noisy:
+            self.input[0 : self.numEx] += 5.0 * stats.norm.rvs(size=self.numEx)
+            self.input[self.numEx : ] += 2.0 * stats.norm.rvs(size=self.numIn)
+
         self.input += self.synapses[spikes, :].sum(axis=0)
 
         # Calculate two iterations for stability
@@ -192,21 +216,20 @@ class Network():
         self.voltage[numpy.where(self.voltage >= 30.0)] = 30.0
 
 
-        # Accumulate motor outputs -- this is a wee bit iffy. I was
-        # experimenting with different methods that could be used to determine
-        # the motor output, and this seemed to be the most reliable. This will
-        # probably get moved to Agent.update
-        mo = numpy.where(self.voltage[self.motorSyn] >= 30.0, True, False)
-
-        self.motorOutput = numpy.clip(mo - 0.1 * self.motorOutput, 0.0, 1.0)
-
-
         # Calculate the next iteration of the decaying STDP constants for
         # neurons which have already fired
         self.stdp *= Network.STDP_DECAY
 
         # For any neurons that just spiked, setup the STDP values
         self.stdp[spikes] = Network.STDP_INIT
+
+        for s in range(self.totalNum):
+            for ps in range(self.sensory.totalNum):
+                if s in spikes and self.sensory.stdp[ps]:
+                    self.inputSynapses[ps, s] += self.sensory.stdp[ps] * numpy.sign(self.inputSynapses[ps, s])
+                else:
+                    self.inputSynapses[ps, s] -= Network.SYNAPSE_DECAY * self.inputSynapses[ps, s]
+
 
         # Iterate over all synaptic weights in order to update the weight
         # matrix. I feel like there is a better way to do this through numpy,
@@ -229,6 +252,14 @@ class Network():
                     # w' = w(1 - k)
                     # w = e^(t - kt)
                     self.synapses[ps, s] -= Network.SYNAPSE_DECAY * self.synapses[ps, s]
+
+        for ps in range(self.totalNum):
+            for s in range(self.motor.totalNum):
+                if s in motorSpikes and self.stdp[ps]:
+                    self.outputSynapses[ps, s] += self.stdp[ps] * numpy.sign(self.outputSynapses[ps, s])
+                else:
+                    self.outputSynapses[ps, s] -= Network.SYNAPSE_DECAY * self.outputSynapses[ps, s]
+
 
         self.synapses = numpy.clip(self.synapses, -1.0, 1.0)
 

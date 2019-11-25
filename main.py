@@ -2,6 +2,7 @@ import network
 
 import argparse
 import datetime
+import numpy as np
 import scipy.stats as stat
 import matplotlib.pyplot as plot
 import matplotlib.animation as animation
@@ -9,7 +10,9 @@ import matplotlib.animation as animation
 #k = 100
 timeScale = 500
 #net = network.Network(7 * k, 3 * k)
-net = network.Network(380, 22, 0, 0)
+inputLayer = network.Layer(50, 25)
+outputLayer = network.Layer(50, 25)
+net = network.Network(380, 22, inputLayer, outputLayer)
 #net = network.Network(8 * k, 2 * k)
 
 fig = plot.figure(figsize=(6,6))
@@ -42,9 +45,13 @@ def init():
     return line, vline
 
 def animate(i):
-    net.input[0 : net.numEx] = 5.0 * stat.norm.rvs(size=net.numEx)
-    net.input[net.numEx : ] = 2.0 * stat.norm.rvs(size=net.numIn)
-    spikes = net.update()
+    inputs = np.ones(net.sensory.totalNum)
+    inputs[0 : net.sensory.numEx] = 5.0 * stat.norm.rvs(size=net.sensory.numEx)
+    inputs[net.sensory.numEx : ] = 2.0 * stat.norm.rvs(size=net.sensory.numIn)
+    spikes = net.update(inputs)
+    #net.input[0 : net.numEx] = 5.0 * stat.norm.rvs(size=net.numEx)
+    #net.input[net.numEx : ] = 2.0 * stat.norm.rvs(size=net.numIn)
+    #spikes = net.update()
     data[i % timeScale] = spikes
     times = []
     spikes = []
