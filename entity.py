@@ -14,6 +14,7 @@ class Entity(Turtle):
 
         self.goto(pos)
         self.hideturtle()
+        self.radians()
 
     def update(self):
         pass
