@@ -3,6 +3,8 @@ from entity import Entity
 
 class Text(Entity):
 
+    FONT = ('Arial', 11, 'normal')
+
     """
     Specialized turtle-based entity used for drawing text at a position
     """
@@ -18,6 +20,11 @@ class Text(Entity):
 
         self.color('white')
         self.goto(x, y)
-        self.write(text, font=('Arial', 11, 'normal'))
+        self.write(text, font=Text.FONT)
         self.hideturtle()
+
+
+    def setText(self,text=''):
+        self.clear()
+        self.write(text, font=Text.FONT)
 

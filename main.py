@@ -12,7 +12,7 @@ import numpy
 from text import Text
 from target import Target
 from entity import Entity
-from new_agent import Agent
+from agent import Agent
 
 
 class Application():
@@ -33,6 +33,12 @@ class Application():
 
     def registerClose():
         Application.run = False
+
+
+    def enableNoisy(net):
+        net.noisy = not net.noisy
+        net.sensory.noisy = not net.sensory.noisy
+        net.motor.noisy = not net.motor.noisy
 
 
     def enableSynapseDebug(win, net):
@@ -63,6 +69,8 @@ class Application():
                                                     initialdir=os.getcwd(),
                                                     title='Save Synapses',
                                                     filetypes=types)
+        if not ans:
+            return
 
         with open(ans, 'w') as fp:
             for s in sensorySyn:
@@ -89,6 +97,9 @@ class Application():
                                                     initialdir=os.getcwd(),
                                                     title='Load Synapses',
                                                     filetypes=types)
+        if not ans:
+            return
+
         with open(ans, 'r') as fp:
             senList = []
             recList = []
@@ -118,6 +129,15 @@ class Application():
                     break
                 motList.append([float(x) for x in line.split()])
 
+            inputSyn = numpy.array(senList)
+            recurrentSyn = numpy.array(recList)
+            motorSyn = numpy.array(motList)
+
+            if (inputSyn.shape != net.inputSynapses.shape or
+                recurrentSyn.shape != net.synapses.shape or
+                motorSyn.shape != net.synapses.shape):
+                print('Unable to transfer weights. Size mismatch.')
+
             net.inputSynapses = numpy.array(senList)
             net.synapses = numpy.array(recList)
             net.outputSynapses = numpy.array(motList)
@@ -139,6 +159,8 @@ class Application():
         for r in sensorySyn:
             dbg.goto(x_start, dbg.ycor() - 20)
             for e in r:
+                e = e if e < 1.0 else 1.0
+                e = e if e > -1.0 else -1.0
                 cl = (float(e),float(e),float(e)) if e > 0 else (float(-e),0,0)
                 dbg.color(cl)
                 dbg.stamp()
@@ -151,6 +173,8 @@ class Application():
         for r in recurrentSyn:
             dbg.goto(x_start, dbg.ycor() - 20)
             for e in r:
+                e = e if e < 1.0 else 1.0
+                e = e if e > -1.0 else -1.0
                 cl = (float(e),float(e),float(e)) if e > 0 else (float(-e),0,0)
                 dbg.color(cl)
                 dbg.stamp()
@@ -163,8 +187,8 @@ class Application():
         for r in motorSyn:
             dbg.goto(x_start, dbg.ycor() - 20)
             for e in r:
-                e = e if e <= 1.0 else 1.0
-                e = e if e >= -1.0 else -1.0
+                e = e if e < 1.0 else 1.0
+                e = e if e > -1.0 else -1.0
                 cl = (float(e),float(e),float(e)) if e > 0 else (float(-e),0,0)
                 dbg.color(cl)
                 dbg.stamp()
@@ -227,9 +251,11 @@ class Application():
 
         Application.rootWindow = win.getcanvas().master
 
-        agent = Agent()
+        agent = Agent(2, 1)
+        agent2 = Agent(2, 1)
         target = Target()
         controls = Text(200, 230, Application.controlText)
+        motorDisplay = Text(200, 200)
 
         Application.debug = Entity()
         Application.spikes = Entity()
@@ -243,6 +269,7 @@ class Application():
         win.onkey(partial(Application.setSpeed, 3), '3')
         win.onkey(partial(Application.setSpeed, 2), '2')
         win.onkey(partial(Application.setSpeed, 1), '1')
+        win.onkey(partial(Application.enableNoisy, agent.net), 'n')
         win.onclick(target.goto)
 
         prev = time.clock_gettime(time.CLOCK_MONOTONIC)
@@ -250,7 +277,11 @@ class Application():
 
         debugAccum = 0.0
         updateAccum = 0.0
-        agentRewardAccum = 0.0
+
+        # NOTE: We want this to be separate from realtime
+        # because the agent should still get a reward if we
+        # change the speed setting.
+        agentRewardAccum = 0
 
         while Application.run:
 
@@ -266,7 +297,9 @@ class Application():
             delta = cur - prev
             debugAccum += delta
             updateAccum += delta
-            agentRewardAccum += delta
+
+
+            motorDisplay.setText(agent.motorFrequency)
 
             Application.spikes.clearstamps()
 
@@ -276,14 +309,29 @@ class Application():
 
             Application.drawSpikeDebug(agent.net)
 
-            if agent.distance(target) < 20.0:
+            if agent.distance(target) < 20.0 or agentRewardAccum > 250:
                 target.onCollision()
-                agent.reward(1 + 1 / agentRewardAccum)
-                agentRewardAccum = 0.0
+                agent.reward((1 + 1 / agentRewardAccum))
+                agentRewardAccum = 0
+                agent.clear()
+
+
+            screenSize = agent.getscreen().screensize()
+            agentX = agent.xcor()
+            agentY = agent.ycor()
+            agentX = agentX if agentX < screenSize[0] - 20 else -agentX + 20
+            agentX = agentX if agentX > -screenSize[0] + 20 else -agentX - 20
+            agentY = agentY if agentY < screenSize[1] - 20 else -agentY + 20
+            agentY = agentY if agentY > -screenSize[1] + 20 else -agentY - 20
+            agent.penup()
+            agent.goto(agentX, agentY)
+            agent.pendown()
+
 
             if updateAccum >= Application.updateDelta:
                 agent.update()
                 updateAccum -= Application.updateDelta
+                agentRewardAccum += 0.0005 # Update the delta every logical timestep
 
             win.update()
             prev = cur
