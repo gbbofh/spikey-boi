@@ -1,6 +1,6 @@
 # Spikey-Boi
 
-### A moving rectangle that is supposed to learn how to find a target and does, kind of.
+### A moving triangle that is supposed to learn how to find a target and does, kind of.
 
 ## What it is
 

@@ -23,10 +23,10 @@ input, and one for motor output. In theory, this should prevent backwards flow
 from motor output back to sensory input. An example of the matrices are as
 follows:
 
-Input:          Recurrent:      Output:
-|ir1 ir2|       |r1 r2 r3|      |ro1 ro2 ro3|
-|ir3 ir4|       |r4 r5 r6|      |ro4 ro5 ro6|
-|ir5 ir6|       |r7 r8 r9|
+Input:                  Recurrent:         Output:
+|ir1 ir2 ir3|           |r1 r2 r3|      |ro1 ro2|
+|ir4 ir5 ir6|           |r4 r5 r6|      |ro3 ro4|
+                        |r7 r8 r9|      |ro5 ro6|
 
 Each column in the input matrix corresponds to an input neuron; every entry in a
 patricular column represents that input neurons synaptic connection to a neuron

@@ -22,7 +22,7 @@ class Agent(Entity):
         inputLayer = Layer(2, 0)
         outputLayer = Layer(2, 0)
 
-        self.net = Network(2, 1, inputLayer, outputLayer)
+        self.net = Network(7, 3, inputLayer, outputLayer)
 
         self.motorFrequency = numpy.zeros(2)
         self.motorClock = 0
@@ -35,7 +35,6 @@ class Agent(Entity):
         angle = angle - heading + numpy.pi
         angle = angle if angle <= numpy.pi else angle - 2 * numpy.pi
 
-        # self.net.update((angle, -angle))
         self.net.update((2 * angle, -2 * angle))
         outputs = self.net.motorSpikes
 
@@ -47,9 +46,18 @@ class Agent(Entity):
             self.motorClock = 0
 
         self.left(numpy.diff(self.motorFrequency) * 2.0)
-        self.forward(numpy.sum(self.motorFrequency))
+        self.forward(numpy.sum(self.motorFrequency) * 10.0)
 
 
     def setTarget(self, target=None):
         self.target = target
 
+
+    def reward(self, delta):
+        sensorySyn = self.net.inputSynapses
+        recurrentSyn = self.net.synapses
+        motorSyn = self.net.outputSynapses
+
+        self.net.inputSynapses = numpy.clip(sensorySyn * delta, -1.0, 1.0)
+        self.net.synapses = numpy.clip(recurrentSyn * delta, -1.0, 1.0)
+        self.net.outputSynapses = numpy.clip(motorSyn * delta, -1.0, 1.0)

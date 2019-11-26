@@ -4,10 +4,12 @@ import scipy.stats as stats
 # TODO: Consider making a base class since this and Network
 # share so much code in common -- the only real difference is
 # the lack of synapses for the layer.
+# NOTE: Perhaps just merge this and Network back together
+# and provide a method to easily set synaptic connections?
 class Layer():
 
     STDP_INIT = 0.2
-    STDP_DECAY = 0.2
+    STDP_DECAY = 0.3
     SYNAPSE_DECAY = 0.0001
 
     """
@@ -101,7 +103,7 @@ class Network():
 
     # Constants used for STDP
     STDP_INIT = 0.2
-    STDP_DECAY = 0.2
+    STDP_DECAY = 0.3
     SYNAPSE_DECAY = 0.0001
 
     """
