@@ -3,7 +3,7 @@ import time
 import turtle
 
 import tkinter
-import tkinter.filedialog
+import tkinter.filedialog as filedialog
 
 from functools import partial
 
@@ -58,6 +58,11 @@ class Application():
         Application.updateDelta = speeds[speed]
 
 
+    # TODO:
+    # Have these functions serialize everything there is to know
+    # about a network (or agent?) so that they can be completely
+    # loaded. This should be done because neuron parameters
+    # vary for every network generated.
     def writeSynapses(net):
         types = [('all files', '.*'), ('synapses', '.syn')]
 
@@ -65,7 +70,7 @@ class Application():
         recurrentSyn = net.synapses
         motorSyn = net.outputSynapses
 
-        ans = tkinter.filedialog.asksaveasfilename(parent=Application.rootWindow,
+        ans = filedialog.asksaveasfilename(parent=Application.rootWindow,
                                                     initialdir=os.getcwd(),
                                                     title='Save Synapses',
                                                     filetypes=types)
@@ -90,10 +95,15 @@ class Application():
             fp.write('\n')
 
 
+    # TODO:
+    # Have these functions serialize everything there is to know
+    # about a network (or agent?) so that they can be completely
+    # loaded. This should be done because neuron parameters
+    # vary for every network generated.
     def readSynapses(net):
         types = [('all files', '.*'), ('synapses', '.syn')]
 
-        ans = tkinter.filedialog.askopenfilename(parent=Application.rootWindow,
+        ans = filedialog.askopenfilename(parent=Application.rootWindow,
                                                     initialdir=os.getcwd(),
                                                     title='Load Synapses',
                                                     filetypes=types)
@@ -251,8 +261,14 @@ class Application():
 
         Application.rootWindow = win.getcanvas().master
 
+        # TODO:
+        # Lets add a population of agents, initialized to
+        # random positions, with their own network.
+        # Maybe we can see if competition changes anything
+        # Also consider adding a pool of targets
+        # and give each agent the information about the
+        # closest available target.
         agent = Agent(2, 1)
-        agent2 = Agent(2, 1)
         target = Target()
         controls = Text(200, 230, Application.controlText)
         motorDisplay = Text(200, 200)
