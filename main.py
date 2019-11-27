@@ -268,13 +268,16 @@ class Application():
         # Also consider adding a pool of targets
         # and give each agent the information about the
         # closest available target.
-        agent = Agent(2, 1)
+        agent = Agent(8, 2)
         target = Target()
         controls = Text(200, 230, Application.controlText)
         motorDisplay = Text(200, 200)
 
         Application.debug = Entity()
         Application.spikes = Entity()
+
+        Application.debug.shapesize(1.0, 1.0)
+        Application.spikes.shapesize(1.0, 1.0)
 
         agent.setTarget(target)
 
@@ -325,7 +328,7 @@ class Application():
 
             Application.drawSpikeDebug(agent.net)
 
-            if agent.distance(target) < 20.0 or agentRewardAccum > 250:
+            if agent.distance(target) < 30.0 or agentRewardAccum > 250:
                 target.onCollision()
                 agent.reward((1 + 1 / agentRewardAccum))
                 agentRewardAccum = 0
@@ -335,10 +338,10 @@ class Application():
             screenSize = agent.getscreen().screensize()
             agentX = agent.xcor()
             agentY = agent.ycor()
-            agentX = agentX if agentX < screenSize[0] - 20 else -agentX + 20
-            agentX = agentX if agentX > -screenSize[0] + 20 else -agentX - 20
-            agentY = agentY if agentY < screenSize[1] - 20 else -agentY + 20
-            agentY = agentY if agentY > -screenSize[1] + 20 else -agentY - 20
+            agentX = agentX if agentX < screenSize[0] - 30 else -agentX + 30
+            agentX = agentX if agentX > -screenSize[0] + 30 else -agentX - 30
+            agentY = agentY if agentY < screenSize[1] - 30 else -agentY + 30
+            agentY = agentY if agentY > -screenSize[1] + 30 else -agentY - 30
             agent.penup()
             agent.goto(agentX, agentY)
             agent.pendown()

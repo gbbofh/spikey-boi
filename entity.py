@@ -16,6 +16,7 @@ class Entity(Turtle):
 
         self.penup()
         self.shape('square')
+        self.shapesize(1.5, 1.5)
         self.speed(0)
 
         if color:
