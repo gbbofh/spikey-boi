@@ -9,31 +9,79 @@ support for spike-timing dependent plasticity to the neural network model. The
 implementation of STDP is relatively simple, and currently has some efficiency
 issues that need worked out in that particular region of code.
 
-This is *not* intended to be a fully functional implementation, and it is still
-under construction ( and will be for the indefinite future, as this is a subject
-that interests me greatly ). This started out as a project for an undergraduate
-Computer Science class, which introduced the foundational topics of
-computational neuroscience.
+It has been modified here to control a virtual agent, modelled after a simple
+robot.
 
+### The Agent
+
+The agent here is represented by a red triangle. It has two sensory inputs,
+and two motor outputs (for the time being). The inputs to the network are a
+function of the relative angle between the front of the agent, and the target
+(green circle). Which input responds, as well as how it responds, depends upon
+the angle between the agent and the target. In order to attempt to drive the
+agent to seek the target, the sensory input is strongest at the front, and
+decays along either side.
+
+The motor output of the agent is produced by sampling the spike frequency of
+each motor neuron over a period of time. This period of time is a defined
+constant in the Agent class, and is currently set to 500 timesteps.
+
+Currently, the motor output is reset to zero at the end of 500 timesteps. This
+will be fixed in the near future, to prevent the agent from stuttering as it
+moves.
+
+### The Display
+
+This program is capable of displaying some helpful information about the agent.
+
+In the top left, the synaptic matrix is displayed. Weights can be any value
+in the range [-1.0, 1.0]. Negative weights are displayed as red, while positive
+weights are displayed as white.
+
+Below this, the current membrane potential of each neuron is displayed.
+The current manner of how these are displayed is somewhat clunky, and I intend
+to clean this up in the future.
+
+Controls are displayed in the upper right.
+
+### The Network
+
+The spiking network is built upon Eugene M. Izhikevich's model, published in
+2003, with the addition of a parameter for each neuron to facilitate STDP.
+
+Initial implementations featured a single recurrent spiking network, however
+this proved problematic for several reasons; the most notable being that motor
+neurons would form synaptic connections with one another (as well as the input
+neurons), which would directly interfere with one another.
+
+The solution to this problem was to separate the network into three segments (or
+layers). In this manner, we actually have three synaptic matrices: One for
+synapses from the input neurons to the recurrent layer; one for the recurrent
+layer itself; and one for neurons from the recurrent layer to the output layer.
+
+In this manner we can form connections from the input neurons to any neurons in
+the recurrent layer, and we can form connections from any neurons in the
+recurrent layer to any neurons in the output layer.
+
+In addition to STDP, a positive reward is given to the agent for reaching the
+target -- in the future a punishment will also be given to the agent if it takes
+too long to reach the target. I did not have time to implement this before it
+was presented for class.
 
 ## Requirements
 
+ * Python (Version >= 3.1)
  * SciPy
  * NumPy
 
-SciPy and NumPy are used for their extremely fast array indexing and creation,
-as well as for the generation of arrays of random numbers. In addition to this,
-the Turtle library is used to display the agent, as well as its neuronal
-activity and (optionally, if you uncomment the line to enable it) synaptic
-weights. *WARNING*, drawing of synaptic weights is very time consuming, and will
-cause the application to run significantly slower.
+## Usage
 
-## To Do
+```bash
+python3 main.py
+```
 
-The agent class and the associated main function is an absolute mess -- I am
-well aware of this. In the future they will be separated into two different
-files, and the target code will be pulled out of agent and moved to its own
-class. This was done as a hasty prototype for my groups project, just to see if
-it would work. Time devoted to this entire prototype was ~1 week of development,
-whilst simultaneously writing a report on its development.
+Right now the program is relatively minimal, but more features are going to be
+coming in the near future. One of the most important will be modifying the
+save/load functionality to include information about the entire network -- not
+just synaptic connections, but also parameters for the spiking model.
 
