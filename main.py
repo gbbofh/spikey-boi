@@ -304,7 +304,6 @@ class Application():
         Application.spikes = Entity()
 
         controls = Text(200, 230, Application.controlText)
-        motorAccum = Text(200, -300)
 
         Application.debug.shapesize(0.5, 0.5)
         Application.spikes.shapesize(0.5, 0.5)
@@ -384,7 +383,6 @@ class Application():
                 agent.update()
                 updateAccum -= Application.updateDelta
                 agentRewardAccum -= 0.00008 # Update reward
-                motorAccum.setText(agent.motorAccum, ('Arial', 6, 'normal'))
 
             win.update()
             prev = cur
