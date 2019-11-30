@@ -80,6 +80,12 @@ class Application():
             return
 
         with open(ans, 'w') as fp:
+            for i in range(net.totalNum):
+                fp.write(str(net.scale[i]) + ' ')
+                fp.write(str(net.uSens[i]) + ' ')
+                fp.write(str(net.reset[i]) + ' ')
+                fp.write(str(net.uReset[i]) + '\n')
+            fp.write('\n')
             for s in sensorySyn:
                 for e in s:
                     fp.write(str(e) + ' ')
@@ -117,6 +123,10 @@ class Application():
             senList = []
             recList = []
             motList = []
+            nScale = []
+            nUSens = []
+            nReset = []
+            nUReset = []
 
             line = None
 
@@ -124,6 +134,17 @@ class Application():
             # but they need to be this way
             # because assignments in loop conditions
             # are not valid in python :/
+            while True:
+                line = fp.readline().strip()
+                if not line:
+                    break
+                s, us, r, ur = [float(x) for x in line.split()]
+
+                nScale.append(s)
+                nUSens.append(us)
+                nReset.append(r)
+                nUReset.append(ur)
+
             while True:
                 line = fp.readline().strip()
                 if not line:
@@ -148,8 +169,13 @@ class Application():
 
             if (inputSyn.shape != net.inputSynapses.shape or
                 recurrentSyn.shape != net.synapses.shape or
-                motorSyn.shape != net.synapses.shape):
+                motorSyn.shape != net.outputSynapses.shape):
                 print('Unable to transfer weights. Size mismatch.')
+
+            net.scale = numpy.array(nScale)
+            net.uSens = numpy.array(nUSens)
+            net.reset = numpy.array(nReset)
+            net.uReset = numpy.array(nUReset)
 
             net.inputSynapses = numpy.array(senList)
             net.synapses = numpy.array(recList)
