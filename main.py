@@ -199,9 +199,8 @@ class Application():
                 dbg.color(cl)
                 dbg.stamp()
 
-        dbg.goto(dbg.xcor() + 20, screenSize[1] - 20)
-
-        x_start = dbg.xcor()
+        y_start = dbg.ycor() - 5
+        dbg.goto(x_start, y_start)
 
         for r in recurrentSyn:
             dbg.goto(x_start, dbg.ycor() - 12)
@@ -215,8 +214,7 @@ class Application():
                 dbg.color(cl)
                 dbg.stamp()
 
-        dbg.goto(dbg.xcor() + 20, screenSize[1] - 20)
-
+        dbg.goto(dbg.xcor() + 20, y_start)
         x_start = dbg.xcor()
 
         for r in motorSyn:
@@ -298,7 +296,8 @@ class Application():
         # Also consider adding a pool of targets
         # and give each agent the information about the
         # closest available target.
-        agent = Agent(14, 6)
+        # agent = Agent(14, 6)
+        agent = Agent(3, 1)
         target = Target()
 
         Application.debug = Entity()

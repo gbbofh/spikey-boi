@@ -18,7 +18,6 @@ class Agent(Entity):
         self.pendown()
         self.showturtle()
 
-        # inputLayer = Layer(4, 4)
         inputLayer = Layer(3, 2)
         outputLayer = Layer(2, 0)
 
@@ -35,9 +34,9 @@ class Agent(Entity):
         angle = angle - heading + numpy.pi
         angle = angle if angle <= numpy.pi else angle - 2 * numpy.pi
         iAngle = numpy.pi * numpy.sign(angle) - angle
-        frontAngle = abs(angle) if abs(angle) >= numpy.pi / 8 and abs(angle) <= numpy.pi / 4 else 0
+        frontAngle = abs(angle) if abs(angle) >= numpy.pi * (1 - 1 / 6) else 0
 
-        self.net.update((5 * iAngle, -5 * iAngle, 5 * frontAngle, 5 * angle, -5 * angle))
+        self.net.update((5 * angle, -5 * angle, 5 * frontAngle, 5 * iAngle, -5 * iAngle))
         outputs = self.net.motorSpikes
 
         self.motorFrequency[outputs] += 1.0 / Agent.MOTORWINDOW
