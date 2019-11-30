@@ -14,7 +14,7 @@ robot.
 
 ### The Agent
 
-The agent here is represented by a red triangle. It has two sensory inputs,
+The agent here is represented by a red triangle. It has three sensory inputs,
 and two motor outputs (for the time being). The inputs to the network are a
 function of the relative angle between the front of the agent, and the target
 (green circle). Which input responds, as well as how it responds, depends upon
@@ -24,11 +24,7 @@ decays along either side.
 
 The motor output of the agent is produced by sampling the spike frequency of
 each motor neuron over a period of time. This period of time is a defined
-constant in the Agent class, and is currently set to 500 timesteps.
-
-Currently, the motor output is reset to zero at the end of 500 timesteps. This
-will be fixed in the near future, to prevent the agent from stuttering as it
-moves.
+constant in the Agent class, and is currently set to 100 timesteps.
 
 ### The Display
 

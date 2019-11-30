@@ -19,7 +19,7 @@ class Agent(Entity):
         self.showturtle()
 
         # inputLayer = Layer(3, 2)
-        inputLayer = Layer(3, 0)
+        inputLayer = Layer(0, 3)
         outputLayer = Layer(2, 0)
 
         self.net = Network(numIn, numEx, inputLayer, outputLayer)
@@ -39,7 +39,7 @@ class Agent(Entity):
         frontAngle = abs(angle) if abs(angle) >= numpy.pi * (1 - 1 / 6) else 0
 
         # self.net.update((5 * angle, -5 * angle, 5 * frontAngle, 5 * iAngle, -5 * iAngle))
-        self.net.update((5 * angle, -5 * angle, 5 * frontAngle))
+        self.net.update((3 * angle, -3 * angle, 3 * frontAngle))
         outputs = self.net.motorSpikes
 
         self.motorAccum[self.motorClock % Agent.MOTORWINDOW] = 0
