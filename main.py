@@ -297,13 +297,14 @@ class Application():
         # and give each agent the information about the
         # closest available target.
         # agent = Agent(14, 6)
-        agent = Agent(3, 1)
+        agent = Agent(14, 6)
         target = Target()
 
         Application.debug = Entity()
         Application.spikes = Entity()
 
         controls = Text(200, 230, Application.controlText)
+        motorAccum = Text(200, -300)
 
         Application.debug.shapesize(0.5, 0.5)
         Application.spikes.shapesize(0.5, 0.5)
@@ -383,6 +384,7 @@ class Application():
                 agent.update()
                 updateAccum -= Application.updateDelta
                 agentRewardAccum -= 0.00008 # Update reward
+                motorAccum.setText(agent.motorAccum, ('Arial', 6, 'normal'))
 
             win.update()
             prev = cur

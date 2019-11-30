@@ -8,7 +8,7 @@ class Text(Entity):
     """
     Specialized turtle-based entity used for drawing text at a position
     """
-    def __init__(self, x, y=None, text=''):
+    def __init__(self, x, y=None, text='', font=None):
         """
         Constructs a turtle intended for drawing text at a position
         Parameters:
@@ -18,13 +18,16 @@ class Text(Entity):
         """
         super().__init__()
 
+        tFont = font if font else Text.FONT
+
         self.color('white')
         self.goto(x, y)
-        self.write(text, font=Text.FONT)
+        self.write(text, font=tFont)
         self.hideturtle()
 
 
-    def setText(self,text=''):
+    def setText(self, text='', font=None):
+        tFont = font if font else Text.FONT
         self.clear()
-        self.write(text, font=Text.FONT)
+        self.write(text, font=tFont)
 
