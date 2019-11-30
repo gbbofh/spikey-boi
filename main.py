@@ -172,6 +172,7 @@ class Application():
             net.outputSynapses = numpy.array(motList)
 
 
+    # TODO: Draw synapses in a square matrix instead of a rectangle?
     def drawSynapseDebug(net):
         dbg = Application.debug
         dbg.clearstamps()
@@ -184,6 +185,7 @@ class Application():
         recurrentSyn = net.synapses
 
         x_start = dbg.xcor()
+        y_start = dbg.ycor()
 
         for r in sensorySyn:
             dbg.goto(x_start, dbg.ycor() - 12)
@@ -303,7 +305,6 @@ class Application():
         Application.spikes = Entity()
 
         controls = Text(200, 230, Application.controlText)
-        # motorDisplay = Text(200, 200)
 
         Application.debug.shapesize(0.5, 0.5)
         Application.spikes.shapesize(0.5, 0.5)
@@ -348,9 +349,6 @@ class Application():
             delta = cur - prev
             debugAccum += delta
             updateAccum += delta
-
-            # mdt = 'MF: {} TC: {}'.format(agent.motorFrequency, foundCount)
-            # motorDisplay.setText(mdt)
 
             Application.spikes.clearstamps()
 

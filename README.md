@@ -85,3 +85,12 @@ coming in the near future. One of the most important will be modifying the
 save/load functionality to include information about the entire network -- not
 just synaptic connections, but also parameters for the spiking model.
 
+## To Do
+
+There are a lot of optimizations that I wish to do on this code. Noteably, I
+wish to add a live graphical display of spikes via matplotlib, so that the
+history of spikes can be observed. This is something that I have available in
+another repository but integrating it here has proven to be somewhat
+challenging. Nevertheless, implementing it would be incredibly helpful, so that
+is a major goal in the near future.
+
