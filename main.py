@@ -58,11 +58,6 @@ class Application():
         Application.updateDelta = speeds[speed]
 
 
-    # TODO:
-    # Have these functions serialize everything there is to know
-    # about a network (or agent?) so that they can be completely
-    # loaded. This should be done because neuron parameters
-    # vary for every network generated.
     def writeSynapses(agent):
         types = [('all files', '.*'), ('synapses', '.syn')]
 
@@ -103,11 +98,6 @@ class Application():
             fp.write('\n')
 
 
-    # TODO:
-    # Have these functions serialize everything there is to know
-    # about a network (or agent?) so that they can be completely
-    # loaded. This should be done because neuron parameters
-    # vary for every network generated.
     def readSynapses(agent):
         types = [('all files', '.*'), ('synapses', '.syn')]
         net = agent.net
@@ -196,42 +186,48 @@ class Application():
         x_start = dbg.xcor()
 
         for r in sensorySyn:
-            dbg.goto(x_start, dbg.ycor() - 20)
-            for e in r:
+            dbg.goto(x_start, dbg.ycor() - 12)
+            sFilter = numpy.where(r != 0.0)[0]
+            for s in sFilter:
+                dbg.goto(x_start + 12 * s, dbg.ycor())
+                e = r[s]
                 e = e if e < 1.0 else 1.0
                 e = e if e > -1.0 else -1.0
                 cl = (float(e),float(e),float(e)) if e > 0 else (float(-e),0,0)
                 dbg.color(cl)
                 dbg.stamp()
-                dbg.goto(dbg.xcor() + 20, dbg.ycor())
 
-        dbg.goto(dbg.xcor() + 40, screenSize[1] - 20)
+        dbg.goto(dbg.xcor() + 20, screenSize[1] - 20)
 
         x_start = dbg.xcor()
 
         for r in recurrentSyn:
-            dbg.goto(x_start, dbg.ycor() - 20)
-            for e in r:
+            dbg.goto(x_start, dbg.ycor() - 12)
+            rFilter = numpy.where(r != 0.0)[0]
+            for s in rFilter:
+                dbg.goto(x_start + 12 * s, dbg.ycor())
+                e = r[s]
                 e = e if e < 1.0 else 1.0
                 e = e if e > -1.0 else -1.0
                 cl = (float(e),float(e),float(e)) if e > 0 else (float(-e),0,0)
                 dbg.color(cl)
                 dbg.stamp()
-                dbg.goto(dbg.xcor() + 20, dbg.ycor())
 
-        dbg.goto(dbg.xcor() + 40, screenSize[1] - 20)
+        dbg.goto(dbg.xcor() + 20, screenSize[1] - 20)
 
         x_start = dbg.xcor()
 
         for r in motorSyn:
-            dbg.goto(x_start, dbg.ycor() - 20)
-            for e in r:
+            dbg.goto(x_start, dbg.ycor() - 12)
+            mFilter = numpy.where(r != 0.0)[0]
+            for s in mFilter:
+                dbg.goto(x_start + 12 * s, dbg.ycor())
+                e = r[s]
                 e = e if e < 1.0 else 1.0
                 e = e if e > -1.0 else -1.0
                 cl = (float(e),float(e),float(e)) if e > 0 else (float(-e),0,0)
                 dbg.color(cl)
                 dbg.stamp()
-                dbg.goto(dbg.xcor() + 20, dbg.ycor())
 
 
     def drawSpikeDebug(net):
@@ -243,41 +239,44 @@ class Application():
         motorV = net.motor.voltage
         recurrentV = net.voltage
 
-        dbg.goto(-screenSize[0] + 20, -screenSize[1] + 70)
+        sFilter = numpy.where(sensoryV > -65)[0]
+        rFilter = numpy.where(recurrentV > -65)[0]
+        mFilter = numpy.where(motorV > -65)[0]
+
+        dbg.goto(-screenSize[0] + 20, -screenSize[1] + 42)
 
         x_start = dbg.xcor()
 
-        for r,v in enumerate(sensoryV):
-            nv = (v + 65) / 95
+        for n in sFilter:
+            nv = (sensoryV[n] + 65) / 95
             nv = min(max(0.0, nv), 1.0)
             color = (float(nv), float(nv), float(nv))
 
             dbg.color(color)
+            dbg.goto(x_start + 12 * n, dbg.ycor())
             dbg.stamp()
-            dbg.goto(dbg.xcor() + 20, dbg.ycor())
 
-        dbg.goto(x_start, -screenSize[1] + 45)
+        dbg.goto(x_start, -screenSize[1] + 31)
 
-        for r,v in enumerate(recurrentV):
-
-            nv = (v + 65) / 95
+        for n in rFilter:
+            nv = (recurrentV[n] + 65) / 95
             nv = min(max(0.0, nv), 1.0)
             color = (float(nv), float(nv), float(nv))
 
             dbg.color(color)
+            dbg.goto(x_start + 12 * n, dbg.ycor())
             dbg.stamp()
-            dbg.goto(dbg.xcor() + 20, dbg.ycor())
 
         dbg.goto(x_start, -screenSize[1] + 20)
 
-        for r,v in enumerate(motorV):
-            nv = (v + 65) / 95
+        for n in mFilter:
+            nv = (motorV[n] + 65) / 95
             nv = min(max(0.0, nv), 1.0)
             color = (float(nv), float(nv), float(nv))
 
             dbg.color(color)
+            dbg.goto(x_start + 12 * n, dbg.ycor())
             dbg.stamp()
-            dbg.goto(dbg.xcor() + 20, dbg.ycor())
 
 
     def main():
@@ -297,17 +296,17 @@ class Application():
         # Also consider adding a pool of targets
         # and give each agent the information about the
         # closest available target.
-        agent = Agent(21, 9)
+        agent = Agent(14, 6)
         target = Target()
 
         Application.debug = Entity()
         Application.spikes = Entity()
 
         controls = Text(200, 230, Application.controlText)
-        motorDisplay = Text(200, 200)
+        # motorDisplay = Text(200, 200)
 
-        Application.debug.shapesize(1.0, 1.0)
-        Application.spikes.shapesize(1.0, 1.0)
+        Application.debug.shapesize(0.5, 0.5)
+        Application.spikes.shapesize(0.5, 0.5)
 
         agent.setTarget(target)
 
@@ -319,6 +318,7 @@ class Application():
         win.onkey(partial(Application.setSpeed, 2), '2')
         win.onkey(partial(Application.setSpeed, 1), '1')
         win.onkey(partial(Application.enableNoisy, agent.net), 'n')
+        win.onkey(agent.clear, 'c')
         win.onclick(target.goto)
 
         prev = time.clock_gettime(time.CLOCK_MONOTONIC)
@@ -330,7 +330,7 @@ class Application():
         # NOTE: We want this to be separate from realtime
         # because the agent should still get a reward if we
         # change the speed setting.
-        agentRewardAccum = 0
+        agentRewardAccum = 1.0
 
         foundCount = 0
 
@@ -349,25 +349,27 @@ class Application():
             debugAccum += delta
             updateAccum += delta
 
-
-            mdt = 'MF: {} TC: {}'.format(agent.motorFrequency, foundCount)
-            motorDisplay.setText(mdt)
+            # mdt = 'MF: {} TC: {}'.format(agent.motorFrequency, foundCount)
+            # motorDisplay.setText(mdt)
 
             Application.spikes.clearstamps()
 
-            if Application.synapseDebug and debugAccum >= 0.5:
+            if Application.synapseDebug and debugAccum >= 1.0:
                 Application.drawSynapseDebug(agent.net)
-                debugAccum -= 0.5
+                debugAccum -= 1.0
 
             Application.drawSpikeDebug(agent.net)
 
-            if agent.distance(target) < 30.0 or agentRewardAccum > 250:
+            if agent.distance(target) < 30.0:
                 target.onCollision()
                 foundCount += 1
-                agent.reward((1 + 1 / agentRewardAccum))
-                agentRewardAccum = 0
+                agent.reward(1 + agentRewardAccum)
+                agentRewardAccum = 1.0
                 agent.clear()
 
+            if agentRewardAccum <= 0:
+                agent.reward(0.99)
+                agentRewardAccum = 1.0
 
             screenSize = agent.getscreen().screensize()
             agentX = agent.xcor()
@@ -380,11 +382,10 @@ class Application():
             agent.goto(agentX, agentY)
             agent.pendown()
 
-
             if updateAccum >= Application.updateDelta:
                 agent.update()
                 updateAccum -= Application.updateDelta
-                agentRewardAccum += 0.0005 # Update the delta every logical timestep
+                agentRewardAccum -= 0.00008 # Update reward
 
             win.update()
             prev = cur

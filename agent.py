@@ -37,12 +37,7 @@ class Agent(Entity):
         iAngle = numpy.pi * numpy.sign(angle) - angle
         frontAngle = abs(angle) if abs(angle) >= numpy.pi / 8 and abs(angle) <= numpy.pi / 4 else 0
 
-        # self.net.update((5 * iAngle, -5 * iAngle, 5 * angle, -5 * angle))
-        # self.net.update((5 * angle, -5 * angle, 5 * angle, -5 * angle, 5 * frontAngle))
-        self.net.update((5 * frontAngle, 5 * angle, -5 * angle, 5 * angle, -5 * angle))
-        # self.net.update((5 * angle, -5 * angle, 5 * iAngle, -5 * iAngle,
-        #                  5 * angle, -5 * angle, -5 * iAngle, -5 * iAngle))
-        # self.net.update(numpy.zeros(5))
+        self.net.update((5 * iAngle, -5 * iAngle, 5 * frontAngle, 5 * angle, -5 * angle))
         outputs = self.net.motorSpikes
 
         self.motorFrequency[outputs] += 1.0 / Agent.MOTORWINDOW
