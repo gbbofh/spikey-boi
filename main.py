@@ -41,7 +41,7 @@ class Application():
         net.motor.noisy = not net.motor.noisy
 
 
-    def enableSynapseDebug(win, net):
+    def enableSynapseDebug():
         Application.synapseDebug = not Application.synapseDebug
         if not Application.synapseDebug:
             Application.debug.clearstamps()
@@ -63,8 +63,10 @@ class Application():
     # about a network (or agent?) so that they can be completely
     # loaded. This should be done because neuron parameters
     # vary for every network generated.
-    def writeSynapses(net):
+    def writeSynapses(agent):
         types = [('all files', '.*'), ('synapses', '.syn')]
+
+        net = agent.net
 
         sensorySyn = net.inputSynapses
         recurrentSyn = net.synapses
@@ -100,8 +102,9 @@ class Application():
     # about a network (or agent?) so that they can be completely
     # loaded. This should be done because neuron parameters
     # vary for every network generated.
-    def readSynapses(net):
+    def readSynapses(agent):
         types = [('all files', '.*'), ('synapses', '.syn')]
+        net = agent.net
 
         ans = filedialog.askopenfilename(parent=Application.rootWindow,
                                                     initialdir=os.getcwd(),
@@ -268,13 +271,14 @@ class Application():
         # Also consider adding a pool of targets
         # and give each agent the information about the
         # closest available target.
-        agent = Agent(8, 2)
+        agent = Agent(21, 9)
         target = Target()
-        controls = Text(200, 230, Application.controlText)
-        motorDisplay = Text(200, 200)
 
         Application.debug = Entity()
         Application.spikes = Entity()
+
+        controls = Text(200, 230, Application.controlText)
+        motorDisplay = Text(200, 200)
 
         Application.debug.shapesize(1.0, 1.0)
         Application.spikes.shapesize(1.0, 1.0)
@@ -282,9 +286,9 @@ class Application():
         agent.setTarget(target)
 
         win.onkey(Application.registerClose, 'q')
-        win.onkey(partial(Application.enableSynapseDebug, win, agent.net), 's')
-        win.onkey(partial(Application.writeSynapses, agent.net), 'd')
-        win.onkey(partial(Application.readSynapses, agent.net), 'l')
+        win.onkey(Application.enableSynapseDebug, 's')
+        win.onkey(partial(Application.writeSynapses, agent), 'd')
+        win.onkey(partial(Application.readSynapses, agent), 'l')
         win.onkey(partial(Application.setSpeed, 3), '3')
         win.onkey(partial(Application.setSpeed, 2), '2')
         win.onkey(partial(Application.setSpeed, 1), '1')
@@ -302,6 +306,8 @@ class Application():
         # change the speed setting.
         agentRewardAccum = 0
 
+        foundCount = 0
+
         while Application.run:
 
             # Reset update accum when we change
@@ -318,7 +324,8 @@ class Application():
             updateAccum += delta
 
 
-            motorDisplay.setText(agent.motorFrequency)
+            mdt = 'MF: {} TC: {}'.format(agent.motorFrequency, foundCount)
+            motorDisplay.setText(mdt)
 
             Application.spikes.clearstamps()
 
@@ -330,6 +337,7 @@ class Application():
 
             if agent.distance(target) < 30.0 or agentRewardAccum > 250:
                 target.onCollision()
+                foundCount += 1
                 agent.reward((1 + 1 / agentRewardAccum))
                 agentRewardAccum = 0
                 agent.clear()

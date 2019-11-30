@@ -18,7 +18,8 @@ class Agent(Entity):
         self.pendown()
         self.showturtle()
 
-        inputLayer = Layer(2, 2)
+        # inputLayer = Layer(4, 4)
+        inputLayer = Layer(3, 2)
         outputLayer = Layer(2, 0)
 
         self.net = Network(numIn, numEx, inputLayer, outputLayer)
@@ -34,8 +35,14 @@ class Agent(Entity):
         angle = angle - heading + numpy.pi
         angle = angle if angle <= numpy.pi else angle - 2 * numpy.pi
         iAngle = numpy.pi * numpy.sign(angle) - angle
+        frontAngle = abs(angle) if abs(angle) >= numpy.pi / 8 and abs(angle) <= numpy.pi / 4 else 0
 
-        self.net.update((5 * angle, -5 * angle, 5 * iAngle, -5 * iAngle))
+        # self.net.update((5 * iAngle, -5 * iAngle, 5 * angle, -5 * angle))
+        # self.net.update((5 * angle, -5 * angle, 5 * angle, -5 * angle, 5 * frontAngle))
+        self.net.update((5 * frontAngle, 5 * angle, -5 * angle, 5 * angle, -5 * angle))
+        # self.net.update((5 * angle, -5 * angle, 5 * iAngle, -5 * iAngle,
+        #                  5 * angle, -5 * angle, -5 * iAngle, -5 * iAngle))
+        # self.net.update(numpy.zeros(5))
         outputs = self.net.motorSpikes
 
         self.motorFrequency[outputs] += 1.0 / Agent.MOTORWINDOW
@@ -45,8 +52,8 @@ class Agent(Entity):
             self.motorFrequency *= 0
             self.motorClock = 0
 
-        self.left(numpy.diff(self.motorFrequency) * 2.0)
-        self.forward(numpy.sum(self.motorFrequency) * 10.0)
+        self.left(numpy.diff(self.motorFrequency) * 4.0)
+        self.forward(numpy.sum(self.motorFrequency) * 20.0)
 
 
     def setTarget(self, target=None):
