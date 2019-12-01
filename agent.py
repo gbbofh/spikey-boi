@@ -19,6 +19,9 @@ class Agent(Entity):
         self.showturtle()
 
         # inputLayer = Layer(3, 2)
+        # inputLayer = Layer(3, 0)
+        # inputLayer = Layer(2, 3)
+        # inputLayer = Layer(1, 2)
         inputLayer = Layer(0, 3)
         outputLayer = Layer(2, 0)
 
@@ -39,19 +42,17 @@ class Agent(Entity):
         frontAngle = abs(angle) if abs(angle) >= numpy.pi * (1 - 1 / 6) else 0
 
         # self.net.update((5 * angle, -5 * angle, 5 * frontAngle, 5 * iAngle, -5 * iAngle))
-        self.net.update((3 * angle, -3 * angle, 3 * frontAngle))
+        # self.net.update((3 * angle, -3 * angle, 3 * frontAngle))
+        self.net.update((3 * frontAngle, 3 * angle, -3 * angle))
+        # xPos = self.xcor() / self.getscreen().screensize()[0] * 5
+        # yPos = self.ycor() / self.getscreen().screensize()[1] * 5
+        # self.net.update((xPos, yPos, 3 * frontAngle, 3 * angle, -3 * angle))
         outputs = self.net.motorSpikes
 
         self.motorAccum[self.motorClock % Agent.MOTORWINDOW] = 0
         self.motorAccum[self.motorClock % Agent.MOTORWINDOW][outputs] = 1
         self.motorClock += 1
         self.motorFrequency = numpy.sum(self.motorAccum, axis=0) / self.MOTORWINDOW
-        # self.motorFrequency[outputs] += 1.0 / Agent.MOTORWINDOW
-        # self.motorClock += 1
-
-        # if self.motorClock >= Agent.MOTORWINDOW:
-        #     self.motorFrequency *= 0
-        #     self.motorClock = 0
 
         self.left(numpy.diff(self.motorFrequency) * 2.0)
         self.forward(numpy.sum(self.motorFrequency) * 20.0)

@@ -351,8 +351,9 @@ class Application():
 
             Application.spikes.clearstamps()
 
-            if Application.synapseDebug and debugAccum >= 1.0:
-                Application.drawSynapseDebug(agent.net)
+            if debugAccum >= 1.0:
+                if Application.synapseDebug:
+                    Application.drawSynapseDebug(agent.net)
                 debugAccum -= 1.0
 
             Application.drawSpikeDebug(agent.net)
