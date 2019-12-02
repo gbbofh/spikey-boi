@@ -189,7 +189,7 @@ class Application():
 
         for r in sensorySyn:
             dbg.goto(x_start, dbg.ycor() - 12)
-            sFilter = numpy.where(r != 0.0)[0]
+            sFilter = numpy.where((r > 0.0001) | (r < -0.0001))[0]
             for s in sFilter:
                 dbg.goto(x_start + 12 * s, dbg.ycor())
                 e = r[s]
@@ -204,7 +204,7 @@ class Application():
 
         for r in recurrentSyn:
             dbg.goto(x_start, dbg.ycor() - 12)
-            rFilter = numpy.where(r != 0.0)[0]
+            rFilter = numpy.where((r > 0.0001) | (r < -0.0001))[0]
             for s in rFilter:
                 dbg.goto(x_start + 12 * s, dbg.ycor())
                 e = r[s]
@@ -219,7 +219,7 @@ class Application():
 
         for r in motorSyn:
             dbg.goto(x_start, dbg.ycor() - 12)
-            mFilter = numpy.where(r != 0.0)[0]
+            mFilter = numpy.where((r > 0.0001) | (r < -0.0001))[0]
             for s in mFilter:
                 dbg.goto(x_start + 12 * s, dbg.ycor())
                 e = r[s]
@@ -297,13 +297,14 @@ class Application():
         # and give each agent the information about the
         # closest available target.
         # agent = Agent(14, 6)
-        agent = Agent(14, 6)
+        agent = Agent(21, 9)
         target = Target()
 
         Application.debug = Entity()
         Application.spikes = Entity()
 
         controls = Text(200, 230, Application.controlText)
+        counter = Text(200, 210, 'Target found 0 times.')
 
         Application.debug.shapesize(0.5, 0.5)
         Application.spikes.shapesize(0.5, 0.5)
@@ -360,11 +361,15 @@ class Application():
 
             if agent.distance(target) < 30.0:
                 target.onCollision()
-                foundCount += 1
                 agent.reward(1 + agentRewardAccum)
                 agentRewardAccum = 1.0
                 agent.clear()
 
+                foundCount += 1
+                counter.setText('Target found ' + str(foundCount) + ' times.')
+
+            # Agent did not find the taret in time
+            # So we decrease the synaptic weights
             if agentRewardAccum <= 0:
                 agent.reward(0.99)
                 agentRewardAccum = 1.0
