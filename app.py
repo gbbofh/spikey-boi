@@ -271,7 +271,7 @@ class App():
             util.random = np.random.default_rng(self.seed)
 
             for i, s in enumerate(states):
-                self.debug.ui[i] = s
+                self.debug.ui[i].enabled = s
 
             self.debug.enabled = debug_enable
 
