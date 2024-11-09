@@ -88,6 +88,7 @@ I have added a number of keybindings to provide debugging / visualization inform
 | n         | Enable / disable gaussian noise input               |
 | i         | Enable / disable sensory input                      |
 | q         | Enable / disable dynamic scaling for gaussian noise |
+| g         | Enable / disable 3D connectome                      |
 | space     | Save the current simulation state to `state` file   |
 | backspace | Load the simulation state from `state` file         |
 

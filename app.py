@@ -139,6 +139,7 @@ class App():
             pygame.K_n: lambda: self.net.toggle_noise(),
             pygame.K_i: lambda: self.agent.toggle_inputs(),
             pygame.K_q: lambda: self.net.toggle_adaptive_noise(),
+            pygame.K_g: lambda: self.debug._graph.toggle(),
             pygame.K_SPACE: lambda: self.save_state(),
             pygame.K_BACKSPACE: lambda: self.load_state(),
         }
@@ -263,8 +264,17 @@ class App():
             self.sim_time_m = sm
             self.sim_time_s = ss
 
+            debug_enable = self.debug.enabled
+            states = [e.enabled for e in self.debug.ui]
+
             self.debug = debugger.DebugManager(self)
             util.random = np.random.default_rng(self.seed)
+
+            for i, s in enumerate(states):
+                if s:
+                    self.debug.toggle(i)
+
+            self.debug.enabled = debug_enable
 
     def main(self):
 
