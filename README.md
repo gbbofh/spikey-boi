@@ -1,92 +1,109 @@
-# Spikey-Boi
+# Description
+This project is a rewrite of the original "spikey-boi" project, of which I was
+one of two authors while taking a Computational Neuroscience class during my undergraduate degree.
 
-### A moving triangle that is supposed to learn how to find a target and does, kind of.
+The codebase has been completely rewritten from scratch, and has been ported from
+using python turtle, to using pygame for rendering. The core idea is still the same
+but a number of performance improvements have been made, in addition to providing
+a more realistic and functional model of reward-modulated STDP.
 
-## What it is
+The simulation will perform a periodic auto-save of training progress to a file
+named `autosave`. Automatic loading from this file is not currently implemented.
 
-This is an extension of another repository of mine, spiking-python, to add
-support for spike-timing dependent plasticity to the neural network model. The
-implementation of STDP is relatively simple, and currently has some efficiency
-issues that need worked out in that particular region of code.
+The state can also be saved on-demand to the `state` file. I have included a
+pre-trained model which has been training for a total of ~50 hours already. To
+load this model, you can press `backspace` once the simulation starts.
 
-It has been modified here to control a virtual agent, modelled after a simple
-robot.
+## Implementation Details
+For simplicity, I replaced the Izhekivich model neurons with a Leaky-Integrate and Fire model.
+There are a total of 15 input neurons, defined in the `Agent` class, and 2 motor neurons.
 
-### The Agent
+The input neurons respond to the following environmental features:
 
-The agent here is represented by a red triangle. It has three sensory inputs,
-and two motor outputs (for the time being). The inputs to the network are a
-function of the relative angle between the front of the agent, and the target
-(green circle). Which input responds, as well as how it responds, depends upon
-the angle between the agent and the target. In order to attempt to drive the
-agent to seek the target, the sensory input is strongest at the front, and
-decays along either side.
+| id  | environmental feature                                                      |
+| --- | -------------------------------------------------------------------------- |
+| 0   | Signed distance along the x-axis from the agent to the target              |
+| 1   | Signed distance along the y-axis from the agent to the target              |
+| 2   | Negative signed distance along the x-axis from the agent to the target     |
+| 3   | Negative signed distance along the y-axis from the agent to the target     |
+| 4   | Euclidean distance from the agent to the target                            |
+| 5   | Distance from agent to wall nearby wall (if wall is to the left)           |
+| 6   | Distance from agent to wall nearby wall (if wall is to the right)          |
+| 7   | Agent has collected the target recently                                    |
+| 8   | Angle of the agent to the target $\left[\frac{-pi}{4},\frac{pi}{4}\right]$ |
+| 9   | Agent has moved closer to the target this frame                            |
+| 10  | Cosine of the angle between the agent and target                           |
+| 11  | Sine of the angle between the agent and target                             |
+| 12  | Signed position relative to the center of the display (x-axis)             |
+| 13  | Signed position relative to the center of the display (y-axis)             |
+| 14  | Negative signed position relative to the center of the display (x-axis)    |
+| 15  | Negative signed position relative to the center of the display (y-axis)    |
 
-The motor output of the agent is produced by sampling the spike frequency of
-each motor neuron over a period of time. This period of time is a defined
-constant in the Agent class, and is currently set to 100 timesteps.
+Most of these sensory inputs decay exponentially, or are passed through an
+exponential function before being given to the input neuron as an injected current.
 
-### The Display
+The firing rate of all neurons is calculated every update, according to the following
+formula:
+```math
 
-This program is capable of displaying some helpful information about the agent.
+Fr_{i} = \sum_{k=1}^{1000} \frac{S_{i,k}}{k} \cdot \frac{1000}{\tau} \\
 
-In the top left, the synaptic matrix is displayed. Weights can be any value
-in the range [-1.0, 1.0]. Negative weights are displayed as red, while positive
-weights are displayed as white.
-
-Below this, the current membrane potential of each neuron is displayed.
-The current manner of how these are displayed is somewhat clunky, and I intend
-to clean this up in the future.
-
-Controls are displayed in the upper right.
-
-### The Network
-
-The spiking network is built upon Eugene M. Izhikevich's model, published in
-2003, with the addition of a parameter for each neuron to facilitate STDP.
-
-Initial implementations featured a single recurrent spiking network, however
-this proved problematic for several reasons; the most notable being that motor
-neurons would form synaptic connections with one another (as well as the input
-neurons), which would directly interfere with one another.
-
-The solution to this problem was to separate the network into three segments (or
-layers). In this manner, we actually have three synaptic matrices: One for
-synapses from the input neurons to the recurrent layer; one for the recurrent
-layer itself; and one for neurons from the recurrent layer to the output layer.
-
-In this manner we can form connections from the input neurons to any neurons in
-the recurrent layer, and we can form connections from any neurons in the
-recurrent layer to any neurons in the output layer.
-
-In addition to STDP, a positive reward is given to the agent for reaching the
-target -- in the future a punishment will also be given to the agent if it takes
-too long to reach the target. I did not have time to implement this before it
-was presented for class.
-
-## Requirements
-
- * Python (Version >= 3.1)
- * SciPy
- * NumPy
-
-## Usage
-
-```bash
-python3 main.py
 ```
 
-Right now the program is relatively minimal, but more features are going to be
-coming in the near future. One of the most important will be modifying the
-save/load functionality to include information about the entire network -- not
-just synaptic connections, but also parameters for the spiking model.
+Each spike is weighted according to how many simulation steps have elapsed since it occurred.
 
-## To Do
+This firing rate is used to drive the agent to turn and move in the direction it is currently facing,
+depending on whether one or both of the motor neurons is active.
 
-There are a lot of optimizations that I wish to do on this code. Noteably, I
-wish to add a live graphical display of spikes via matplotlib, so that the
-history of spikes can be observed. This is something that I have available in
-another repository but integrating it here has proven to be somewhat
-challenging. Nevertheless, implementing it would be incredibly helpful, so that
-is a major goal in the near future.
+Learning is done once every simulation timestep, and incorporates not only spikes, but also
+sub-threshold membrane potentials, in addition to reward eligibility.
 
+Unlike the original model, which used 2 feed-forward layers and a recurrent hidden layer, this
+model uses only a single fully recurrent layer. Any structure is entirely decided during the training process.
+
+# Usage
+To run, simply execute `main.py`. This will open the graphical display and start the simulation.
+The simulation should update every 4 ms, and the actual neural network is updated using a time delta of 0.1 ms.
+This means that the simulation runs 25 times slower than real-time, in ideal conditions.
+
+
+## Keybindings
+
+I have added a number of keybindings to provide debugging / visualization information at runtime.
+
+| key       | description                                         |
+| --------- | --------------------------------------------------- |
+| ~         | Enable debugging                                    |
+| 1         | Show / hide membrane potentials                     |
+| 2         | Show / hide firing rates                            |
+| 3         | Show / hide membrane potential correlation matrix   |
+| 4         | Show / hide spikes                                  |
+| 5         | Show / hide synaptic weights                        |
+| 6         | Show / hide reward modulation                       |
+| 7         | Show / hide reward eligibility                      |
+| 8         | Show / hide STDP update heatmap                     |
+| 9         | Show / hide input current                           |
+| 0         | Enable / disable convolution kernels (blurring)     |
+| /         | Show / hide position trace                          |
+| n         | Enable / disable gaussian noise input               |
+| i         | Enable / disable sensory input                      |
+| q         | Enable / disable dynamic scaling for gaussian noise |
+| space     | Save the current simulation state to `state` file   |
+| backspace | Load the simulation state from `state` file         |
+
+# Future Work
+
+I plan on continuing to work on this project in the future. I would like to
+eventually implement some more visualizations to show network architecture
+and activity during the learning process. One visualization I am currently exploring
+is an interactive 3D view of the network, where the sensory input and motor neurons
+are displayed separately from the rest of the network. This display does not currently
+work in real-time, as it relies on plotly. I may eventually look into efficiently
+implementing such a plot using pygame, or I may instead migrate this entire application
+over to another language like C#.
+
+One thing I would like to explore is allowing for populations of agents to exist at once,
+possibly with evolutionary / genetic algorithms in addition to learning to drive some features
+like network size and allowing some structure to become 'locked into place,' so to speak; however
+doing this would require a considerable amount of work, and most likely would necessitate switching
+to another language and / or a dedicated game engine for efficiency reasons.
