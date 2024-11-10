@@ -21,7 +21,7 @@ class Network():
 
         # Synapse parameters
         'P_syn': 0.4,
-        'P_syn_gen': 0.6,
+        'P_syn_gen': 0.00005,
         'tau_s': 5.0,
         'w_I': 0.05, # Orig - 0.05
         'S_decay': 0.00001,
