@@ -37,6 +37,7 @@ class Network():
         'A_minus': 0.012, # orig 0.012
         'tau_plus': 10.0,
         'tau_minus': 20.0,
+        'learning_enabled': True,
 
         # Reward parameters
         'r_scale_factor': 1.0,
@@ -183,30 +184,35 @@ class Network():
         self.spike_buffer[:, :] = np.roll(self.spike_buffer, -1)
         self.spike_buffer[:, -1:] = 0
 
-        # Skipping on computing delay properly for now
-        # Need to figure out a good implementation
-        # self.spike_buffer[:, self.max_delay - 1] = self.spikes[:]
-
         # I think this works correctly?
         for i in range(nN):
             self.spike_buffer[i, self.delays[i] - 1] = self.spikes[i]
 
-        # for i in range(nN): # Post
-        #     for j in range(nN): # Pre
-        #         self.I_syn[i] += self.w[j, i] * self.spike_buffer[j, 0] * self.neuron_type[j]
-
-        # arrived = self.spike_buffer[:, 0]
-        # self.I_syn += self.w.sum(axis=0) * arrived * self.neuron_type
-
         mod = self.spike_buffer[:, 0] * self.neuron_type
         self.I_syn += np.dot(mod, self.w)
 
-        # r = np.random.random() > (1 - p.P_syn_gen)
+        self.spikes[:] = 0
+
+        self.I_total[:] = self.I_ext + self.I_syn + self.I_inj
+        I_total = self.I_total
+        dv_m = (p.v_rest - self.v_m + p.R_m * I_total) * (p.dt / p.tau_m)
+        self.v_m += dv_m
+
+        pspike = self.v_m >= p.v_threshold
+        self.v_m[pspike] = p.v_reset
+        self.spikes[pspike] = 1
+
+        self.spike_trace[:] = np.roll(self.spike_trace, -1)
+        self.spike_trace[:, -1:] = self.spikes[:, np.newaxis]
+
+        self.firing_rates[:] = 1000 * (self.spike_trace * self.spike_weight).sum(axis=1) / Network.SPIKE_WINDOW / p.dt
+
+        if not self.params.learning_enabled:
+            return
+
         r = util.random.random() > (1 - p.P_syn_gen)
 
-        # i = np.random.randint(0, self.num_neurons) * int(r)
         i = util.random.integers(0, self.num_neurons) * int(r)
-        # j = np.random.randint(0, self.num_neurons) * int(r)
         j = util.random.integers(0, self.num_neurons) * int(r)
 
         c = (i != j) and (self.w[i, j] == 0)
@@ -233,26 +239,10 @@ class Network():
         unidirectional_mask = np.logical_and(final_mask, dir_mask)
 
         self.w[unidirectional_mask] += p.w_I
-        # self.w[final_mask] = p.w_I
-        # if final_mask.any():
+
         if unidirectional_mask.any():
             print(f'New Synapse (Correlation): {np.where(unidirectional_mask)}')
 
-        self.spikes[:] = 0
-
-        self.I_total[:] = self.I_ext + self.I_syn + self.I_inj
-        I_total = self.I_total
-        dv_m = (p.v_rest - self.v_m + p.R_m * I_total) * (p.dt / p.tau_m)
-        self.v_m += dv_m
-
-        pspike = self.v_m >= p.v_threshold
-        self.v_m[pspike] = p.v_reset
-        self.spikes[pspike] = 1
-
-        self.spike_trace[:] = np.roll(self.spike_trace, -1)
-        self.spike_trace[:, -1:] = self.spikes[:, np.newaxis]
-
-        self.firing_rates[:] = 1000 * (self.spike_trace * self.spike_weight).sum(axis=1) / Network.SPIKE_WINDOW / p.dt
 
         # Keep track of when spikes occurred for STDP
         self.P_pre[:] *= np.exp(-p.dt / p.tau_plus)
