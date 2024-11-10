@@ -4,8 +4,10 @@ import pickle
 
 import numpy as np
 import pygame
+import pygame.freetype
 
 import util
+import agent
 import network
 
 class Graph3D:
@@ -18,8 +20,8 @@ class Graph3D:
         cols = 4
 
         # Generate grid positions for 16 nodes (indices 0 to 15)
-        x_positions = np.linspace(-1, 1, cols)  # 4 columns
-        y_positions = np.linspace(-1, 1, rows)  # 4 rows
+        x_positions = np.linspace(-0.5, 0.5, cols)  # 4 columns
+        y_positions = np.linspace(-0.5, 0.5, rows)  # 4 rows
         grid_x, grid_y = np.meshgrid(x_positions, y_positions)
 
         # Flatten the grid arrays
@@ -27,8 +29,8 @@ class Graph3D:
         grid_y = grid_y.flatten()
 
         # Initialize node positions for all neurons
-        self.node_x = np.random.uniform(-0.8, 0.8, self.num_neurons)
-        self.node_y = np.random.uniform(-0.8, 0.8, self.num_neurons)
+        self.node_x = np.random.uniform(-1, 1, self.num_neurons)
+        self.node_y = np.random.uniform(-1, 1, self.num_neurons)
         self.node_z = np.random.uniform(-0.8, 0.8, self.num_neurons)
 
         # Assign positions to nodes 0 to 15 to form a 4x4 grid
@@ -39,12 +41,39 @@ class Graph3D:
         # Optional: Assign specific positions to other nodes as needed
         # For example, positions for motor output neurons
         self.node_x[16] = -0.5  # Adjust position for node 16
-        self.node_y[16] = 0.2
-        self.node_z[16] = 2
+        self.node_y[16] = 0.0
+        self.node_z[16] = 2.0
 
         self.node_x[17] = 0.5  # Adjust position for node 17
-        self.node_y[17] = 0.2
-        self.node_z[17] = 2
+        self.node_y[17] = 0.0
+        self.node_z[17] = 2.0
+
+        self.font_small = pygame.freetype.SysFont('Arial', 8)
+        self.font_medium = pygame.freetype.SysFont('Arial', 12)
+        self.font_large = pygame.freetype.SysFont('Arial', 16)
+
+        self.viewer_distance = 4
+
+        self.node_labels = [
+            'dx+',
+            'dy+',
+            'dx-',
+            'dy-',
+            'dist',
+            'wall left',
+            'wall right',
+            'target',
+            'look',
+            'near',
+            'cos',
+            'sin',
+            'pos-x+',
+            'pos-y+',
+            'pos-x-',
+            'pos-y-',
+            'motor left',
+            'motor right',
+        ]
 
         self.spike_trace = np.zeros_like(net.spikes, dtype=np.float64)
 
@@ -104,6 +133,17 @@ class Graph3D:
             z = self.node_z[i]
             self.node_x[i] = x * cos_angle - z * sin_angle
             self.node_z[i] = x * sin_angle + z * cos_angle
+
+    def rotate_x(self, angle):
+        """ Rotates the 3D coordinates of the nodes around the x-axis by the given angle """
+        cos_angle = np.cos(angle)
+        sin_angle = np.sin(angle)
+
+        for i in range(self.num_neurons):
+            y = self.node_y[i]
+            z = self.node_z[i]
+            self.node_y[i] = y * cos_angle - z * sin_angle
+            self.node_z[i] = y * sin_angle + z * cos_angle
 
     def update(self):
         self.edges = [(i, j, weight) for i, row in enumerate(net.w) for j, weight in enumerate(row) if weight > 0]
@@ -172,18 +212,26 @@ class Graph3D:
         # for i, j, weight in self.edges:
         for i, j, _, weight in edge_depths:
             # Project the 3D positions to 2D
-            x1, y1 = self.project(self.node_x[i], self.node_y[i], self.node_z[i], width, height)
-            x2, y2 = self.project(self.node_x[j], self.node_y[j], self.node_z[j], width, height)
+            x1, y1 = self.project(self.node_x[i], self.node_y[i], self.node_z[i], width, height, viewer_distance=self.viewer_distance)
+            x2, y2 = self.project(self.node_x[j], self.node_y[j], self.node_z[j], width, height, viewer_distance=self.viewer_distance)
             # color = (200, 200, 200)  # Edge color
             color = node_colors[i] // 2
             pygame.draw.line(screen, color, (x1, y1), (x2, y2), max(1, int(weight * 5)))  # Adjust thickness
 
         # Draw nodes with adjusted colors
         # for i in range(self.num_neurons):
-        for i, _ in node_depths:
-            x, y = self.project(self.node_x[i], self.node_y[i], self.node_z[i], width, height)
+        for i, depth in node_depths:
+            x, y = self.project(self.node_x[i], self.node_y[i], self.node_z[i], width, height, viewer_distance=self.viewer_distance)
             color = node_colors[i]
             pygame.draw.circle(screen, color, (x, y), 5)  # Adjust radius as needed
+            if i < 18:
+                if depth <= -1:
+                    font = self.font_large
+                elif depth <= 0:
+                    font = self.font_medium
+                else:
+                    font = self.font_small
+                font.render_to(screen, (x,y), self.node_labels[i], (255,255,255))
             self.projected_pos[i] = (x,y)
 
 # Initialize Pygame
@@ -194,7 +242,6 @@ pygame.display.set_caption("3D Neural Network Visualization")
 
 # Load network and create Graph3D instance
 net = network.Network(50)  # Initialize your network class here
-graph = Graph3D(net)
 
 with open('state', 'rb') as fp:
     try:
@@ -206,6 +253,8 @@ with open('state', 'rb') as fp:
     except:
         pass
 
+graph = Graph3D(net)
+
 # Main loop
 running = True
 click_radius = 10
@@ -213,6 +262,11 @@ click_radius = 10
 net.I_inj[:] = 0
 net.I_syn[:] = 0
 net.I_total[:] = 0
+net.firing_rates[:] = 0
+net.v_m = net.params.v_rest
+net.params.learning_enabled = False
+mouse_button_held = False
+mouse_last_pos = (0,0)
 
 while running:
     screen.fill((0, 0, 0))  # Clear screen
@@ -220,27 +274,54 @@ while running:
     angle = 0  # Initialize rotation angle
     rotation_speed = 0.002  # Set the speed of rotation
 
-    # net.I_inj[:] = np.random.normal(0, net.I_inj.shape)
-
     net.update()
     net.I_inj *= np.exp(-net.params.dt / 50)
-    # print(net.I_inj)
 
     # Rotate and draw the graph
     graph.update()
-    graph.rotate_y(rotation_speed)
+    # graph.rotate_y(rotation_speed)
     graph.draw(screen, width, height)
 
     # Event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x,y = event.pos
 
-            for i, (nx,ny) in graph.projected_pos.items():
-                if (x - nx) ** 2 + (y - ny) ** 2 <= click_radius ** 2:
-                    net.I_inj[i] += 1
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:
+                x,y = event.pos
+
+                found_point = False
+
+                for i, (nx,ny) in graph.projected_pos.items():
+                    if (x - nx) ** 2 + (y - ny) ** 2 <= click_radius ** 2:
+                        net.I_inj[i] += 1
+                        found_point = True
+                if not found_point:
+                    mouse_button_held = True
+                    mouse_last_pos = event.pos
+
+        if event.type == pygame.MOUSEBUTTONUP:
+            mouse_button_held = False
+
+        if event.type == pygame.MOUSEMOTION:
+            if not mouse_button_held:
+                continue
+            x,y = event.pos
+            x0,y0 = mouse_last_pos
+
+            anglex = -(y - y0) * rotation_speed
+            angley = (x - x0) * rotation_speed
+
+            # graph.rotate_x(anglex)
+            graph.rotate_y(angley)
+
+            mouse_last_pos = event.pos
+
+        if event.type == pygame.MOUSEWHEEL:
+            graph.viewer_distance += event.y
+            graph.viewer_distance = np.clip(graph.viewer_distance, 4, 10)
+
 
     # Update display
     pygame.display.flip()
