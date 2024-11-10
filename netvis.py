@@ -108,6 +108,11 @@ class Graph3D:
         self.edges = [(i, j, weight) for i, row in enumerate(net.w) for j, weight in enumerate(row) if weight > 0]
         self.projected_pos = {}
 
+        self.angle = 0
+        self.rotated_x = self.node_x.copy()
+        self.rotated_y = self.node_y.copy()
+        self.rotated_z = self.node_z.copy()
+
     def get_node_colors(self):
         """Adjusts node colors based on their distance from the view."""
         max_distance = 2  # Define the maximum distance for darkening effect
@@ -130,16 +135,18 @@ class Graph3D:
         y = -y * factor + height / 2
         return int(x), int(y)
 
-    def rotate_y(self, angle):
+    def rotate_y(self):
         """ Rotates the 3D coordinates of the nodes around the y-axis by the given angle """
-        cos_angle = np.cos(angle)
-        sin_angle = np.sin(angle)
+        cos_angle = np.cos(self.angle)
+        sin_angle = np.sin(self.angle)
         
         for i in range(self.num_neurons):
             x = self.node_x[i]
             z = self.node_z[i]
-            self.node_x[i] = x * cos_angle - z * sin_angle
-            self.node_z[i] = x * sin_angle + z * cos_angle
+            # self.node_x[i] = x * cos_angle - z * sin_angle
+            # self.node_z[i] = x * sin_angle + z * cos_angle
+            self.rotated_x[i] = x * cos_angle - z * sin_angle
+            self.rotated_z[i] = x * sin_angle + z * cos_angle
 
     def rotate_x(self, angle):
         """ Rotates the 3D coordinates of the nodes around the x-axis by the given angle """
@@ -149,8 +156,10 @@ class Graph3D:
         for i in range(self.num_neurons):
             y = self.node_y[i]
             z = self.node_z[i]
-            self.node_y[i] = y * cos_angle - z * sin_angle
-            self.node_z[i] = y * sin_angle + z * cos_angle
+            # self.node_y[i] = y * cos_angle - z * sin_angle
+            # self.node_z[i] = y * sin_angle + z * cos_angle
+            self.rotated_y[i] = y * cos_angle - z * sin_angle
+            self.rotated_z[i] = y * sin_angle + z * cos_angle
 
     def update(self):
         self.edges = [(i, j, weight) for i, row in enumerate(net.w) for j, weight in enumerate(row) if weight > 0]
@@ -183,13 +192,17 @@ class Graph3D:
             self.node_b[mask] = 0
         elif self.color_mode == 'voltage':
             v = self.net.v_m.copy()
-            v = v + np.abs(np.min(v))
-            max = np.max(v)
-            v = v / max if max != 0 else v
+            # v = v + np.abs(np.min(v))
+            # max = np.max(v)
+            # v = v / max if max != 0 else v
 
-            self.node_r[:] = 255 * v
-            self.node_g[:] = 255 * v
-            self.node_b[:] = 255 * v
+            # self.node_r[:] = 255 * v
+            # self.node_g[:] = 255 * v
+            # self.node_b[:] = 255 * v
+
+            self.node_r[:] = 255 * (v - net.params.v_reset) / (net.params.v_threshold - net.params.v_reset)
+            self.node_g[:] = 255 * (v - net.params.v_reset) / (net.params.v_threshold - net.params.v_reset)
+            self.node_b[:] = 255 * (v - net.params.v_reset) / (net.params.v_threshold - net.params.v_reset)
 
             # mask = self.spike_trace > 0
 
@@ -220,6 +233,8 @@ class Graph3D:
             mask_blue = cur > 0.5
 
             self.node_r[mask_red] = 255 * cur[mask_red]
+            self.node_b[mask_red] = 255 * (1 - cur[mask_red])
+            self.node_r[mask_blue] = 255 * (1 - cur[mask_blue])
             self.node_b[mask_blue] = 255 * cur[mask_blue]
 
         # syn = net.I_syn
@@ -260,8 +275,10 @@ class Graph3D:
         # for i, j, weight in self.edges:
         for i, j, _, weight in edge_depths:
             # Project the 3D positions to 2D
-            x1, y1 = self.project(self.node_x[i], self.node_y[i], self.node_z[i], width, height, viewer_distance=self.viewer_distance)
-            x2, y2 = self.project(self.node_x[j], self.node_y[j], self.node_z[j], width, height, viewer_distance=self.viewer_distance)
+            # x1, y1 = self.project(self.node_x[i], self.node_y[i], self.node_z[i], width, height, viewer_distance=self.viewer_distance)
+            # x2, y2 = self.project(self.node_x[j], self.node_y[j], self.node_z[j], width, height, viewer_distance=self.viewer_distance)
+            x1, y1 = self.project(self.rotated_x[i], self.rotated_y[i], self.rotated_z[i], width, height, viewer_distance=self.viewer_distance)
+            x2, y2 = self.project(self.rotated_x[j], self.rotated_y[j], self.rotated_z[j], width, height, viewer_distance=self.viewer_distance)
             # color = (200, 200, 200)  # Edge color
             color = node_colors[i] // 2
             pygame.draw.line(screen, color, (x1, y1), (x2, y2), max(1, int(weight * 5)))  # Adjust thickness
@@ -269,7 +286,7 @@ class Graph3D:
         # Draw nodes with adjusted colors
         # for i in range(self.num_neurons):
         for i, depth in node_depths:
-            x, y = self.project(self.node_x[i], self.node_y[i], self.node_z[i], width, height, viewer_distance=self.viewer_distance)
+            x, y = self.project(self.rotated_x[i], self.rotated_y[i], self.rotated_z[i], width, height, viewer_distance=self.viewer_distance)
             color = node_colors[i]
             pygame.draw.circle(screen, color, (x, y), 5)  # Adjust radius as needed
             if self.label_enabled[i]:
@@ -298,16 +315,31 @@ pygame.display.set_caption("3D Neural Network Visualization")
 
 # Load network and create Graph3D instance
 net = network.Network(50)  # Initialize your network class here
+net.I_inj[:] = 0
+net.I_syn[:] = 0
+net.I_total[:] = 0
+net.firing_rates[:] = 0
+net.v_m = net.params.v_rest
+net.params.learning_enabled = False
 
-with open('state', 'rb') as fp:
-    try:
-        while True:
-            obj = pickle.load(fp)
-            if obj.__class__.__name__ == 'Network':
-                net = obj
-                break
-    except:
-        pass
+def load_state():
+    global net
+    with open('state', 'rb') as fp:
+        try:
+            while True:
+                obj = pickle.load(fp)
+                if obj.__class__.__name__ == 'Network':
+                    net = obj
+                    break
+        except:
+            pass
+
+    net.I_inj[:] = 0
+    net.I_syn[:] = 0
+    net.I_total[:] = 0
+    net.firing_rates[:] = 0
+    net.v_m = net.params.v_rest
+    net.params.learning_enabled = False
 
 graph = Graph3D(net)
 
@@ -315,12 +347,6 @@ graph = Graph3D(net)
 running = True
 click_radius = 10
 
-net.I_inj[:] = 0
-net.I_syn[:] = 0
-net.I_total[:] = 0
-net.firing_rates[:] = 0
-net.v_m = net.params.v_rest
-net.params.learning_enabled = False
 mouse_button_held = False
 mouse_last_pos = (0,0)
 
@@ -362,6 +388,7 @@ while running:
                     if (x - nx) ** 2 + (y - ny) ** 2 <= click_radius ** 2:
                         net.I_inj[i] += 1
                         found_point = True
+                        print(f'Clicked: {i}')
                 if not found_point:
                     mouse_button_held = True
                     mouse_last_pos = event.pos
@@ -385,7 +412,9 @@ while running:
             angley = (x - x0) * rotation_speed
 
             # graph.rotate_x(anglex)
-            graph.rotate_y(angley)
+            # graph.rotate_y(angley)
+            graph.angle += angley
+            graph.rotate_y()
 
             mouse_last_pos = event.pos
 
@@ -404,6 +433,22 @@ while running:
                 graph.color_mode = 'spikes'
             if event.key == pygame.K_4:
                 graph.color_mode = 'current'
+            if event.key == pygame.K_r:
+                net = network.Network(50)
+                angle = graph.angle
+                view = graph.color_mode
+                graph = Graph3D(net)
+                graph.angle = angle
+                graph.rotate_y()
+                graph.view = view
+            if event.key == pygame.K_s:
+                load_state()
+                angle = graph.angle
+                view = graph.color_mode
+                graph = Graph3D(net)
+                graph.angle = angle
+                graph.rotate_y()
+                graph.view = view
 
 
     # Update display
