@@ -73,6 +73,9 @@ class App():
         self.sim_time_m = 0
         self.sim_time_h = 0
 
+        self.input_record = []
+        self.recording_inputs = False
+
     def process_events(self):
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
@@ -112,6 +115,7 @@ class App():
             pygame.K_g: lambda: self.debug._graph.toggle(),
             pygame.K_SPACE: lambda: self.save_state(),
             pygame.K_BACKSPACE: lambda: self.load_state(),
+            pygame.K_r: lambda: self.toggle_recording(),
         }
 
         cb = lut.get(key)
@@ -121,6 +125,10 @@ class App():
     def update(self):
         self.agent.update()
         self.debug.update()
+
+        if self.recording_inputs:
+            self.input_record.append(self.agent.inputs.copy())
+
         self.sim_time_s += self.agent.net.params.dt / 1000
         self.sim_time_m += self.sim_time_s >= 60
         self.sim_time_h += self.sim_time_m >= 60
@@ -173,6 +181,14 @@ class App():
         self.font.render_to(self.display, pos, fmt, color)
 
         pygame.display.flip()
+
+    def toggle_recording(self):
+        if self.recording_inputs:
+            np.save('input.rec', np.array(self.input_record))
+            self.recording_inputs = False
+        else:
+            self.recording_inputs = True
+            self.input_record = []
 
     def save_state(self, name='state'):
         with open(name, 'wb') as fp:
