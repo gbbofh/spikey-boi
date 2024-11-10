@@ -74,8 +74,15 @@ class Graph3D:
             'motor left',
             'motor right',
         ]
+        for i in range(18, self.num_neurons):
+            self.node_labels.append(str(i))
+
+        self.label_enabled = [True if i < 18 else False for i in range(self.num_neurons)]
 
         self.spike_trace = np.zeros_like(net.spikes, dtype=np.float64)
+
+        self.color_modes = ['synapse', 'voltage', 'spikes', 'current']
+        self.color_mode = self.color_modes[0]
 
         # Node base colors (set base colors for excitatory and inhibitory neurons)
         self.node_r = np.zeros(self.num_neurons)
@@ -153,20 +160,67 @@ class Graph3D:
         self.node_g[:] = 0
         self.node_b[:] = 0
 
-        # Default colors
-        self.node_r[net.num_exc:] = 255  # Inhibitory neurons in red
-        self.node_g[:net.num_exc] = 255  # Excitatory neurons in green
-        self.node_b[:] = 100
+        if self.color_mode == 'synapse':
+            # Default colors
+            self.node_r[net.num_exc:] = 255  # Inhibitory neurons in red
+            self.node_g[:net.num_exc] = 255  # Excitatory neurons in green
+            self.node_b[:] = 100
 
-        # Input
-        self.node_r[0:16] = 200
-        self.node_g[0:16] = 0
-        self.node_b[0:16] = 200
+            # Input
+            self.node_r[0:16] = 200
+            self.node_g[0:16] = 0
+            self.node_b[0:16] = 200
 
-        # Output
-        self.node_r[16:18] = 100
-        self.node_g[16:18] = 100
-        self.node_b[16:18] = 255
+            # Output
+            self.node_r[16:18] = 100
+            self.node_g[16:18] = 100
+            self.node_b[16:18] = 255
+
+            mask = self.spike_trace > 0
+
+            self.node_r[mask] = 255
+            self.node_g[mask] = 255
+            self.node_b[mask] = 0
+        elif self.color_mode == 'voltage':
+            v = self.net.v_m.copy()
+            v = v + np.abs(np.min(v))
+            max = np.max(v)
+            v = v / max if max != 0 else v
+
+            self.node_r[:] = 255 * v
+            self.node_g[:] = 255 * v
+            self.node_b[:] = 255 * v
+
+            # mask = self.spike_trace > 0
+
+            # self.node_r[mask] = 255
+            # self.node_g[mask] = 255
+            # self.node_b[mask] = 255
+        elif self.color_mode == 'spikes':
+            mask = self.spike_trace > 0
+
+            self.node_r[:] = 50
+            self.node_g[:] = 50
+            self.node_b[:] = 50
+            self.node_r[mask] = 200
+            self.node_g[mask] = 200
+            self.node_b[mask] = 255
+
+        elif self.color_mode == 'current':
+            cur = net.I_syn.copy()
+            cur += np.abs(np.min(cur))
+            max = np.max(cur)
+            cur = cur / max if max != 0 else cur
+
+            self.node_r[:] = 50
+            self.node_g[:] = 50
+            self.node_b[:] = 50
+
+            mask_red = cur < 0.5
+            mask_blue = cur > 0.5
+
+            self.node_r[mask_red] = 255 * cur[mask_red]
+            self.node_b[mask_blue] = 255 * cur[mask_blue]
 
         # syn = net.I_syn
 
@@ -181,12 +235,6 @@ class Graph3D:
         # mask = net.spikes > 0
         # self.spike_trace[mask] = 1
         # self.spike_trace *= np.exp(-25 / net.params.dt)
-
-        mask = self.spike_trace > 0
-
-        self.node_r[mask] = 255
-        self.node_g[mask] = 255
-        self.node_b[mask] = 0
 
     def draw(self, screen, width, height):
         """ Draws the network nodes and edges on the screen """
@@ -224,7 +272,7 @@ class Graph3D:
             x, y = self.project(self.node_x[i], self.node_y[i], self.node_z[i], width, height, viewer_distance=self.viewer_distance)
             color = node_colors[i]
             pygame.draw.circle(screen, color, (x, y), 5)  # Adjust radius as needed
-            if i < 18:
+            if self.label_enabled[i]:
                 if depth <= -1:
                     font = self.font_large
                 elif depth <= 0:
@@ -232,6 +280,14 @@ class Graph3D:
                 else:
                     font = self.font_small
                 font.render_to(screen, (x,y), self.node_labels[i], (255,255,255))
+            # if i < 18:
+            #     if depth <= -1:
+            #         font = self.font_large
+            #     elif depth <= 0:
+            #         font = self.font_medium
+            #     else:
+            #         font = self.font_small
+            #     font.render_to(screen, (x,y), self.node_labels[i], (255,255,255))
             self.projected_pos[i] = (x,y)
 
 # Initialize Pygame
@@ -268,6 +324,9 @@ net.params.learning_enabled = False
 mouse_button_held = False
 mouse_last_pos = (0,0)
 
+input_record = np.array([])
+input_index = 0
+
 while running:
     screen.fill((0, 0, 0))  # Clear screen
 
@@ -275,12 +334,18 @@ while running:
     rotation_speed = 0.002  # Set the speed of rotation
 
     net.update()
+    if input_record.size > 0:
+        net.I_inj[:] = input_record[input_index]
+        input_index += 1
+        if input_index >= input_record.shape[0]:
+            input_record = np.array([])
+
     net.I_inj *= np.exp(-net.params.dt / 50)
 
     # Rotate and draw the graph
-    graph.update()
     # graph.rotate_y(rotation_speed)
     graph.draw(screen, width, height)
+    graph.update()
 
     # Event handling
     for event in pygame.event.get():
@@ -305,9 +370,15 @@ while running:
             mouse_button_held = False
 
         if event.type == pygame.MOUSEMOTION:
-            if not mouse_button_held:
-                continue
             x,y = event.pos
+            if not mouse_button_held:
+                for i, (nx,ny) in graph.projected_pos.items():
+                    if (x - nx) ** 2 + (y - ny) ** 2 <= click_radius ** 2:
+                        graph.label_enabled[i] = True
+                        continue
+                    elif i >= 18:
+                        graph.label_enabled[i] = False
+                continue
             x0,y0 = mouse_last_pos
 
             anglex = -(y - y0) * rotation_speed
@@ -321,6 +392,18 @@ while running:
         if event.type == pygame.MOUSEWHEEL:
             graph.viewer_distance += event.y
             graph.viewer_distance = np.clip(graph.viewer_distance, 4, 10)
+
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_l:
+                input_record = np.load('input.rec.npy')
+            if event.key == pygame.K_1:
+                graph.color_mode = 'synapse'
+            if event.key == pygame.K_2:
+                graph.color_mode = 'voltage'
+            if event.key == pygame.K_3:
+                graph.color_mode = 'spikes'
+            if event.key == pygame.K_4:
+                graph.color_mode = 'current'
 
 
     # Update display
