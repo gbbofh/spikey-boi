@@ -22,20 +22,12 @@ class App():
         'I_ext_std': 0.5,
         'I_ext_mean': 1.35,
         'I_ext_adaptive_scale': 0.05,
-        # 'P_syn': 0.3,
         'd_max': 6,
-        # 'A_plus': 0.008,
-        # 'A_minus': 0.008 * 1.1,
-        # 'A_plus': 2.2,
-        # 'A_minus': 2.2 * 1.1,
-        # 'A_plus': 0.01,
-        # 'A_minus': 0.01*1.1,
         'A_plus': 0.01,
         'A_minus': 0.01 * 1.1,
         'r_min': -1,
         'r_max': 1,
         'tau_r': 100.0,
-        # 'tau_e': 400.0,
         'P_syn_gen': 0.00005,
         'F_t': 15,
     }
@@ -45,7 +37,6 @@ class App():
         'I_scale': 1.5,
     }
 
-    # MS_PER_UPDATE = 10
     MS_PER_UPDATE = 4
 
     def __init__(self, num_neurons=50):
@@ -53,7 +44,6 @@ class App():
         pygame.init()
 
         self.seed = int(time.time())
-        # np.random.seed(self.seed)
         util.random = np.random.default_rng(self.seed)
 
         self.display = pygame.display.set_mode((800,600))
@@ -69,25 +59,9 @@ class App():
         self.agent.set_target(self.target)
 
         self.debug = debugger.DebugManager(self)
-        # self.debug.ui.append(debugger.FPSCounter())
-        # self.debug.ui.append(debugger.SynapseDebugger(net=self.net))
-        # self.debug.ui.append(debugger.STDPDebugger(net=self.net))
-        # self.debug.ui.append(debugger.RewardDebugger(net=self.net))
-        # self.debug.ui.append(debugger.VoltageDebugger(self.agent))
-        # # self.debug.ui.append(debugger.AgentDebugger(self.agent))
-        # self.debug.ui.append(debugger.TargetDebugger(self.agent))
-        # self.debug.ui.append(debugger.AgentHeatmapDebugger(self.agent))
-        # # self.debug.ui.append(debugger.AgentStatsDebugger(self.agent))
-        # # self.debug.ui.append(debugger.FiringRateHeatmapDebugger(self.net))
-        # # self.debug.ui.append(debugger.SpikeHistogramDebugger(self.net))
-        # # self.debug.ui[4].enabled = False
-        # # self.debug.ui.append(debugger.SpikeHistDebugger(self.agent))
 
         self.run = True
 
-        # self.prev_time = pygame.time.get_ticks()
-        # self.time = pygame.time.get_ticks()
-        # self.delta_time = 0
         self.time_accum = 0
         self.font = pygame.freetype.SysFont('Arial', 16)
 
@@ -107,10 +81,6 @@ class App():
                 self.on_key_down(e.key)
             if e.type == pygame.MOUSEBUTTONDOWN:
                 self.on_mouse_button_down(e.button)
-
-            # if e.type == pygame.MOUSEBUTTONDOWN:
-            #     pos = pygame.mouse.get_pos()
-            #     self.target.set_pos(*pos)
 
     def on_mouse_button_down(self, button):
         lut = {
