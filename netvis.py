@@ -117,7 +117,7 @@ class Graph3D:
         """Adjusts node colors based on their distance from the view."""
         max_distance = 2  # Define the maximum distance for darkening effect
         min_brightness = 0.2  # Minimum brightness factor (20%)
-        brightness_factors = np.clip(1 - (self.node_z + max_distance) / (2 * max_distance), min_brightness, 1)
+        brightness_factors = np.clip(1 - (self.rotated_z + max_distance) / (2 * max_distance), min_brightness, 1)
 
         # Apply brightness factors to the base colors
         node_colors = np.stack((
@@ -260,10 +260,10 @@ class Graph3D:
         node_colors = self.get_node_colors()
 
         # Calculate depth for each node based on its z-coordinate
-        node_depths = [(i, self.node_z[i]) for i in range(self.num_neurons)]
+        node_depths = [(i, self.rotated_z[i]) for i in range(self.num_neurons)]
 
         # Calculate depth for each edge as the average z-coordinate of its endpoints
-        edge_depths = [(i, j, (self.node_z[i] + self.node_z[j]) / 2, w) for (i, j, w) in self.edges]
+        edge_depths = [(i, j, (self.rotated_z[i] + self.rotated_z[j]) / 2, w) for (i, j, w) in self.edges]
 
         # Sort nodes by depth (farthest first, closest last)
         node_depths.sort(key=lambda x: x[1], reverse=True)
