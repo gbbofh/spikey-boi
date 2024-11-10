@@ -222,7 +222,7 @@ class DebugManager():
 
         self.ui.append(ptrace)
 
-        graph = Graph3D(app=app,size=(300,300),name='connectome')
+        graph = Graph3D(app=app, size=(150,150), ratio=2, name='connectome')
         self.ui.append(graph)
 
         self._w_trace = w_trace
@@ -474,23 +474,51 @@ class Graph3D(Debugger):
         self.node_g = np.zeros(self.num_neurons)
         self.node_b = np.zeros(self.num_neurons)
 
-        self.node_g[:net.num_exc] = 255  # Excitatory neurons in green
         self.node_r[net.num_exc:] = 255  # Inhibitory neurons in red
-
+        self.node_g[:net.num_exc] = 255  # Excitatory neurons in green
         self.node_b[16:18] = 255
 
         self.edges = [(i, j, weight) for i, row in enumerate(net.w) for j, weight in enumerate(row) if weight > 0]
 
+        self.spike_trace = np.zeros(net.num_neurons)
+        self.alpha = 0.9999
+
     def update(self):
         super().update()
 
+        if not self.enabled:
+            return
+
         net = self.net
         self.edges = [(i, j, weight) for i, row in enumerate(net.w) for j, weight in enumerate(row) if weight > 0]
+
+        self.spike_trace = self.alpha * net.spikes + (1 - self.alpha) * self.spike_trace
+
+        self.node_r[:] = 0
+        self.node_g[:] = 0
+        self.node_b[:] = 0
+
+        self.node_r[net.num_exc:] = 255  # Inhibitory neurons in red
+        self.node_g[:net.num_exc] = 255  # Excitatory neurons in green
+        self.node_b[16:18] = 255
+        self.node_r[0:16] = 200
+        self.node_g[0:16] = 0
+        self.node_b[0:16] = 200
+
+        mask = self.spike_trace > 0
+
+        # self.node_r[mask] = 255 * self.spike_trace[mask] + (1 - self.spike_trace[mask]) * self.node_r[mask]
+        # self.node_g[mask] = 200 * self.spike_trace[mask] + (1 - self.spike_trace[mask]) * self.node_g[mask]
+        # self.node_b[mask] = 0
+        self.node_r[mask] = 255
+        self.node_g[mask] = 255
+        self.node_b[mask] = 0
+
         self.rotate_y(0.002)
 
     def get_node_colors(self):
         """Adjusts node colors based on their distance from the view."""
-        max_distance = 2  # Define the maximum distance for darkening effect
+        max_distance = 3  # Define the maximum distance for darkening effect
         min_brightness = 0.2  # Minimum brightness factor (20%)
         brightness_factors = np.clip(1 - (self.node_z + max_distance) / (2 * max_distance), min_brightness, 1)
 
@@ -503,7 +531,7 @@ class Graph3D(Debugger):
         
         return node_colors
 
-    def project(self, x, y, z, width, height, fov=500, viewer_distance=5):
+    def project(self, x, y, z, width, height, fov=500, viewer_distance=10):
         """ Projects 3D coordinates onto a 2D screen """
         factor = fov / (viewer_distance + z)
         x = x * factor + width / 2
@@ -527,8 +555,21 @@ class Graph3D(Debugger):
         # Calculate the colors for each node based on distance
         node_colors = self.get_node_colors()
 
+        # Calculate depth for each node based on its z-coordinate
+        node_depths = [(i, self.node_z[i]) for i in range(self.num_neurons)]
+
+        # Calculate depth for each edge as the average z-coordinate of its endpoints
+        edge_depths = [(i, j, (self.node_z[i] + self.node_z[j]) / 2, w) for (i, j, w) in self.edges]
+
+        # Sort nodes by depth (farthest first, closest last)
+        node_depths.sort(key=lambda x: x[1], reverse=True)
+
+        # Sort edges by depth (farthest first, closest last)
+        edge_depths.sort(key=lambda x: x[2], reverse=True)
+
         # Draw edges
-        for i, j, weight in self.edges:
+        # for i, j, weight in self.edges:
+        for i, j, _, weight in edge_depths:
             # Project the 3D positions to 2D
             x1, y1 = self.project(self.node_x[i], self.node_y[i], self.node_z[i], *self.size)
             x2, y2 = self.project(self.node_x[j], self.node_y[j], self.node_z[j], *self.size)
@@ -537,10 +578,11 @@ class Graph3D(Debugger):
             pygame.draw.line(self.buffer, color, (x1, y1), (x2, y2), max(1, int(weight * 5)))  # Adjust thickness
 
         # Draw nodes with adjusted colors
-        for i in range(self.num_neurons):
+        # for i in range(self.num_neurons):
+        for i, _ in node_depths:
             x, y = self.project(self.node_x[i], self.node_y[i], self.node_z[i], *self.size)
             color = node_colors[i]
-            pygame.draw.circle(self.buffer, color, (x, y), 5)  # Adjust radius as needed
+            pygame.draw.circle(self.buffer, color, (x, y), 2)  # Adjust radius as needed
 
 
 class SpikeHistogramDebugger(Debugger):
