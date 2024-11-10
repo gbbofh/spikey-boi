@@ -440,7 +440,7 @@ while running:
                 graph = Graph3D(net)
                 graph.angle = angle
                 graph.rotate_y()
-                graph.view = view
+                graph.color_mode = view
             if event.key == pygame.K_s:
                 load_state()
                 angle = graph.angle
@@ -448,7 +448,7 @@ while running:
                 graph = Graph3D(net)
                 graph.angle = angle
                 graph.rotate_y()
-                graph.view = view
+                graph.color_mode = view
 
 
     # Update display
