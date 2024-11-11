@@ -116,6 +116,7 @@ class App():
             pygame.K_SPACE: lambda: self.save_state(),
             pygame.K_BACKSPACE: lambda: self.load_state(),
             pygame.K_r: lambda: self.toggle_recording(),
+            pygame.K_m: lambda: self.debug._graph.next_mode(),
         }
 
         cb = lut.get(key)

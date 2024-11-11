@@ -483,6 +483,14 @@ class Graph3D(Debugger):
         self.spike_trace = np.zeros(net.num_neurons)
         self.alpha = 0.9999
 
+        self.angle = 0
+        self.rotated_x = self.node_x.copy()
+        self.rotated_y = self.node_y.copy()
+        self.rotated_z = self.node_z.copy()
+
+        self.mode = 0
+        self.modes = ['synapse', 'voltage', 'spikes']
+
     def update(self):
         super().update()
 
@@ -498,29 +506,50 @@ class Graph3D(Debugger):
         self.node_g[:] = 0
         self.node_b[:] = 0
 
-        self.node_r[net.num_exc:] = 255  # Inhibitory neurons in red
-        self.node_g[:net.num_exc] = 255  # Excitatory neurons in green
-        self.node_b[16:18] = 255
-        self.node_r[0:16] = 200
-        self.node_g[0:16] = 0
-        self.node_b[0:16] = 200
+        mode = self.modes[self.mode]
 
-        mask = self.spike_trace > 0
+        if mode == 'synapse':
+            self.node_r[net.num_exc:] = 255  # Inhibitory neurons in red
+            self.node_g[:net.num_exc] = 255  # Excitatory neurons in green
+            self.node_b[16:18] = 255
+            self.node_r[0:16] = 200
+            self.node_g[0:16] = 0
+            self.node_b[0:16] = 200
 
-        # self.node_r[mask] = 255 * self.spike_trace[mask] + (1 - self.spike_trace[mask]) * self.node_r[mask]
-        # self.node_g[mask] = 200 * self.spike_trace[mask] + (1 - self.spike_trace[mask]) * self.node_g[mask]
-        # self.node_b[mask] = 0
-        self.node_r[mask] = 255
-        self.node_g[mask] = 255
-        self.node_b[mask] = 0
+            mask = self.spike_trace > 0
 
-        self.rotate_y(0.002)
+            # self.node_r[mask] = 255 * self.spike_trace[mask] + (1 - self.spike_trace[mask]) * self.node_r[mask]
+            # self.node_g[mask] = 200 * self.spike_trace[mask] + (1 - self.spike_trace[mask]) * self.node_g[mask]
+            # self.node_b[mask] = 0
+            self.node_r[mask] = 255
+            self.node_g[mask] = 255
+            self.node_b[mask] = 0
+        elif mode == 'voltage':
+            v = self.net.v_m.copy()
+            self.node_r[:] = 255 * (v - net.params.v_reset) / (net.params.v_threshold - net.params.v_reset)
+            self.node_g[:] = 255 * (v - net.params.v_reset) / (net.params.v_threshold - net.params.v_reset)
+            self.node_b[:] = 255 * (v - net.params.v_reset) / (net.params.v_threshold - net.params.v_reset)
+        elif mode == 'spikes':
+            mask = self.spike_trace > 0
+
+            self.node_r[:] = 50
+            self.node_g[:] = 50
+            self.node_b[:] = 50
+            self.node_r[mask] = 200
+            self.node_g[mask] = 200
+            self.node_b[mask] = 255
+
+
+        self.angle += 0.002
+        self.angle = np.mod(self.angle, 2 * np.pi)
+
+        self.rotate_y()
 
     def get_node_colors(self):
         """Adjusts node colors based on their distance from the view."""
         max_distance = 3  # Define the maximum distance for darkening effect
         min_brightness = 0.2  # Minimum brightness factor (20%)
-        brightness_factors = np.clip(1 - (self.node_z + max_distance) / (2 * max_distance), min_brightness, 1)
+        brightness_factors = np.clip(1 - (self.rotated_z + max_distance) / (2 * max_distance), min_brightness, 1)
 
         # Apply brightness factors to the base colors
         node_colors = np.stack((
@@ -538,16 +567,16 @@ class Graph3D(Debugger):
         y = -y * factor + height / 2
         return int(x), int(y)
 
-    def rotate_y(self, angle):
+    def rotate_y(self):
         """ Rotates the 3D coordinates of the nodes around the y-axis by the given angle """
-        cos_angle = np.cos(angle)
-        sin_angle = np.sin(angle)
+        cos_angle = np.cos(self.angle)
+        sin_angle = np.sin(self.angle)
         
         for i in range(self.num_neurons):
             x = self.node_x[i]
             z = self.node_z[i]
-            self.node_x[i] = x * cos_angle - z * sin_angle
-            self.node_z[i] = x * sin_angle + z * cos_angle
+            self.rotated_x[i] = x * cos_angle - z * sin_angle
+            self.rotated_z[i] = x * sin_angle + z * cos_angle
 
     def draw(self):
         super().draw()
@@ -556,10 +585,10 @@ class Graph3D(Debugger):
         node_colors = self.get_node_colors()
 
         # Calculate depth for each node based on its z-coordinate
-        node_depths = [(i, self.node_z[i]) for i in range(self.num_neurons)]
+        node_depths = [(i, self.rotated_z[i]) for i in range(self.num_neurons)]
 
         # Calculate depth for each edge as the average z-coordinate of its endpoints
-        edge_depths = [(i, j, (self.node_z[i] + self.node_z[j]) / 2, w) for (i, j, w) in self.edges]
+        edge_depths = [(i, j, (self.rotated_z[i] + self.rotated_z[j]) / 2, w) for (i, j, w) in self.edges]
 
         # Sort nodes by depth (farthest first, closest last)
         node_depths.sort(key=lambda x: x[1], reverse=True)
@@ -571,8 +600,8 @@ class Graph3D(Debugger):
         # for i, j, weight in self.edges:
         for i, j, _, weight in edge_depths:
             # Project the 3D positions to 2D
-            x1, y1 = self.project(self.node_x[i], self.node_y[i], self.node_z[i], *self.size)
-            x2, y2 = self.project(self.node_x[j], self.node_y[j], self.node_z[j], *self.size)
+            x1, y1 = self.project(self.rotated_x[i], self.rotated_y[i], self.rotated_z[i], *self.size)
+            x2, y2 = self.project(self.rotated_x[j], self.rotated_y[j], self.rotated_z[j], *self.size)
             # color = (200, 200, 200)  # Edge color
             color = node_colors[i] // 2
             pygame.draw.line(self.buffer, color, (x1, y1), (x2, y2), max(1, int(weight * 5)))  # Adjust thickness
@@ -580,9 +609,13 @@ class Graph3D(Debugger):
         # Draw nodes with adjusted colors
         # for i in range(self.num_neurons):
         for i, _ in node_depths:
-            x, y = self.project(self.node_x[i], self.node_y[i], self.node_z[i], *self.size)
+            x, y = self.project(self.rotated_x[i], self.rotated_y[i], self.rotated_z[i], *self.size)
             color = node_colors[i]
-            pygame.draw.circle(self.buffer, color, (x, y), 2)  # Adjust radius as needed
+            pygame.draw.circle(self.buffer, color, (x, y), 1.5)  # Adjust radius as needed
+
+    def next_mode(self):
+        self.mode = self.mode + 1
+        self.mode = self.mode % len(self.modes)
 
 
 class SpikeHistogramDebugger(Debugger):
