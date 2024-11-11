@@ -254,11 +254,17 @@ class App():
             debug_enable = self.debug.enabled
             states = [e.enabled for e in self.debug.ui]
 
+            angle = self.debug._graph.angle
+            mode = self.debug._graph.mode
+
             self.debug = debugger.DebugManager(self)
             util.random = np.random.default_rng(self.seed)
 
             for i, s in enumerate(states):
                 self.debug.ui[i].enabled = s
+
+            self.debug._graph.angle = angle
+            self.debug._graph.mode = mode
 
             self.debug.enabled = debug_enable
 
