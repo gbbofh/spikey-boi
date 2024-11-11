@@ -313,8 +313,10 @@ width, height = 800, 600
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("3D Neural Network Visualization")
 
+NET_SIZE = 50
+
 # Load network and create Graph3D instance
-net = network.Network(50)  # Initialize your network class here
+net = network.Network(NET_SIZE)  # Initialize your network class here
 net.I_inj[:] = 0
 net.I_syn[:] = 0
 net.I_total[:] = 0
@@ -378,6 +380,9 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+        if event.type == pygame.WINDOWRESIZED:
+            width, height = event.x, event.y
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 x,y = event.pos
@@ -420,7 +425,7 @@ while running:
 
         if event.type == pygame.MOUSEWHEEL:
             graph.viewer_distance += event.y
-            graph.viewer_distance = np.clip(graph.viewer_distance, 4, 10)
+            graph.viewer_distance = np.clip(graph.viewer_distance, 3, 10)
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_l:
@@ -434,21 +439,25 @@ while running:
             if event.key == pygame.K_4:
                 graph.color_mode = 'current'
             if event.key == pygame.K_r:
-                net = network.Network(50)
+                net = network.Network(NET_SIZE)
                 angle = graph.angle
                 view = graph.color_mode
+                dist = graph.viewer_distance
                 graph = Graph3D(net)
                 graph.angle = angle
                 graph.rotate_y()
                 graph.color_mode = view
+                graph.viewer_distance = dist
             if event.key == pygame.K_s:
                 load_state()
                 angle = graph.angle
                 view = graph.color_mode
+                dist = graph.viewer_distance
                 graph = Graph3D(net)
                 graph.angle = angle
                 graph.rotate_y()
                 graph.color_mode = view
+                graph.viewer_distance = dist
 
 
     # Update display
