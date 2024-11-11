@@ -81,7 +81,7 @@ class Graph3D:
 
         self.spike_trace = np.zeros_like(net.spikes, dtype=np.float64)
 
-        self.color_modes = ['synapse', 'voltage', 'spikes', 'current']
+        self.color_modes = ['synapse', 'voltage', 'spikes', 'current', 'dw']
         self.color_mode = self.color_modes[0]
 
         # Node base colors (set base colors for excitatory and inhibitory neurons)
@@ -113,6 +113,10 @@ class Graph3D:
         self.rotated_y = self.node_y.copy()
         self.rotated_z = self.node_z.copy()
 
+        self.edge_r = np.zeros((net.num_neurons, net.num_neurons))
+        self.edge_g = np.zeros((net.num_neurons, net.num_neurons))
+        self.edge_b = np.zeros((net.num_neurons, net.num_neurons))
+
     def get_node_colors(self):
         """Adjusts node colors based on their distance from the view."""
         max_distance = 2  # Define the maximum distance for darkening effect
@@ -127,6 +131,21 @@ class Graph3D:
         ), axis=-1)
         
         return node_colors
+
+    def get_edge_colors(self):
+        """Adjusts edge colors based on their distance from the view."""
+        max_distance = 2  # Define the maximum distance for darkening effect
+        min_brightness = 0.2  # Minimum brightness factor (20%)
+        brightness_factors = np.clip(1 - (self.rotated_z + max_distance) / (2 * max_distance), min_brightness, 1)
+
+        # Apply brightness factors to the base colors
+        edge_colors = np.stack((
+            (self.edge_r * brightness_factors).astype(int),
+            (self.edge_g * brightness_factors).astype(int),
+            (self.edge_b * brightness_factors).astype(int)
+        ), axis=-1)
+        
+        return edge_colors
 
     def project(self, x, y, z, width, height, fov=500, viewer_distance=4):
         """ Projects 3D coordinates onto a 2D screen """
@@ -234,8 +253,40 @@ class Graph3D:
 
             self.node_r[mask_red] = 255 * cur[mask_red]
             self.node_b[mask_red] = 255 * (1 - cur[mask_red])
+
             self.node_r[mask_blue] = 255 * (1 - cur[mask_blue])
             self.node_b[mask_blue] = 255 * cur[mask_blue]
+
+        elif self.color_mode == 'dw':
+            # Default colors
+            self.node_r[net.num_exc:] = 200  # Inhibitory neurons in red
+            self.node_g[:net.num_exc] = 200  # Excitatory neurons in green
+            self.node_b[:] = 50
+
+            # Input
+            self.node_r[0:16] = 100
+            self.node_g[0:16] = 0
+            self.node_b[0:16] = 100
+
+            # Output
+            self.node_r[16:18] = 50
+            self.node_g[16:18] = 50
+            self.node_b[16:18] = 200
+
+            mask_plus = self.net.dw > 0
+            mask_minus = self.net.dw < 0
+
+            self.edge_r[:] = 50
+            self.edge_g[:] = 50
+            self.edge_b[:] = 100
+
+            self.edge_r[mask_plus] = 100
+            self.edge_g[mask_plus] = 100
+            self.edge_b[mask_plus] = 255
+
+            self.edge_r[mask_minus] = 255
+            self.edge_g[mask_minus] = 100
+            self.edge_b[mask_minus] = 100
 
         # syn = net.I_syn
 
@@ -271,6 +322,8 @@ class Graph3D:
         # Sort edges by depth (farthest first, closest last)
         edge_depths.sort(key=lambda x: x[2], reverse=True)
 
+        edge_colors = self.get_edge_colors()
+
         # Draw edges
         # for i, j, weight in self.edges:
         for i, j, _, weight in edge_depths:
@@ -280,7 +333,11 @@ class Graph3D:
             x1, y1 = self.project(self.rotated_x[i], self.rotated_y[i], self.rotated_z[i], width, height, viewer_distance=self.viewer_distance)
             x2, y2 = self.project(self.rotated_x[j], self.rotated_y[j], self.rotated_z[j], width, height, viewer_distance=self.viewer_distance)
             # color = (200, 200, 200)  # Edge color
-            color = node_colors[i] // 2
+            # color = node_colors[i] // 2
+            if self.color_mode == 'dw':
+                color = edge_colors[i, j]
+            else:
+                color = node_colors[i] // 2
             pygame.draw.line(screen, color, (x1, y1), (x2, y2), max(1, int(weight * 5)))  # Adjust thickness
 
         # Draw nodes with adjusted colors
@@ -438,8 +495,11 @@ while running:
                 graph.color_mode = 'spikes'
             if event.key == pygame.K_4:
                 graph.color_mode = 'current'
+            if event.key == pygame.K_5:
+                graph.color_mode = 'dw'
             if event.key == pygame.K_r:
                 net = network.Network(NET_SIZE)
+                net.params.learning_enabled = False
                 angle = graph.angle
                 view = graph.color_mode
                 dist = graph.viewer_distance
@@ -458,6 +518,11 @@ while running:
                 graph.rotate_y()
                 graph.color_mode = view
                 graph.viewer_distance = dist
+            if event.key == pygame.K_e:
+                net.params.learning_enabled = not net.params.learning_enabled
+            if event.key == pygame.K_o:
+                with open('netvis.state', 'wb') as fp:
+                    pickle.dump(net, fp)
 
 
     # Update display

@@ -222,7 +222,8 @@ class DebugManager():
 
         self.ui.append(ptrace)
 
-        graph = Graph3D(app=app, size=(150,150), ratio=2, name='connectome')
+        # graph = Graph3D(app=app, size=(150,150), ratio=2, name='connectome')
+        graph = Graph3D(app=app, size=(800,600), ratio=0.8, name='connectome')
         self.ui.append(graph)
 
         self._w_trace = w_trace
@@ -457,17 +458,17 @@ class Graph3D(Debugger):
         # Assign positions to nodes 0 to 15 to form a 4x4 grid
         self.node_x[:16] = grid_x[:16]
         self.node_y[:16] = grid_y[:16]
-        self.node_z[:16] = -1  # Place the grid at z = -1 (or adjust as needed)
+        self.node_z[:16] = -1.5  # Place the grid at z = -1 (or adjust as needed)
 
         # Optional: Assign specific positions to other nodes as needed
         # For example, positions for motor output neurons
         self.node_x[16] = -0.5  # Adjust position for node 16
-        self.node_y[16] = 0.5
-        self.node_z[16] = 1
+        self.node_y[16] = 0
+        self.node_z[16] = 1.5
 
         self.node_x[17] = 0.5  # Adjust position for node 17
-        self.node_y[17] = 0.5
-        self.node_z[17] = 1
+        self.node_y[17] = 0
+        self.node_z[17] = 1.5
 
         # Node base colors (set base colors for excitatory and inhibitory neurons)
         self.node_r = np.zeros(self.num_neurons)
@@ -560,7 +561,7 @@ class Graph3D(Debugger):
         
         return node_colors
 
-    def project(self, x, y, z, width, height, fov=500, viewer_distance=10):
+    def project(self, x, y, z, width, height, fov=500, viewer_distance=4):
         """ Projects 3D coordinates onto a 2D screen """
         factor = fov / (viewer_distance + z)
         x = x * factor + width / 2
