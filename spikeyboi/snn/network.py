@@ -5,9 +5,6 @@ import scipy.ndimage as ndi
 from types import SimpleNamespace
 
 
-import util
-
-
 class Network():
 
     default_params = {
@@ -30,7 +27,7 @@ class Network():
 
         # Conductance delay parameters
         'd_min': 1,
-        'd_max': 10,
+        'd_max': 6,
 
         # STDP parameters
         'A_plus': 0.01, # orig 0.01
@@ -42,7 +39,7 @@ class Network():
         # Reward parameters
         'r_scale_factor': 1.0,
         'r_asymmetry': 0.8,
-        'tau_r': 200.0,
+        'tau_r': 100.0,
         'r_min': -1.5,
         'r_max': 1.5,
 
@@ -53,20 +50,21 @@ class Network():
         'sigmoid_grad': 3,
 
         # Gaussian noise parameters
-        'I_ext_mean': 1.5,
+        'I_ext_mean': 1.35,
         'I_ext_std': 0.5, # orig 0.5
         'I_ext_enable': True,
         'I_ext_adaptive': True,
-        'I_ext_adaptive_scale': 0.05,
+        'I_ext_adaptive_scale': 0.06,
 
         # Spike correlation parameters
-        'min_correlation': 0.7,
+        'min_correlation': 0.6,
 
         # Time parameters
         'dt': 0.1,
     }
 
     SPIKE_WINDOW = 1000
+    random = np.random.default_rng()
 
     # def __setstate__(self, state):
     #     self.__dict__.update(state)
@@ -97,14 +95,10 @@ class Network():
         self.neuron_type = neuron_type
 
         # random probability matrix for sparse connectivity
-        # wp = np.random.random(size=(n_neurons, n_neurons))
-        wp = util.random.random(size=(n_neurons, n_neurons))
+        wp = self.random.random(size=(n_neurons, n_neurons))
 
         # generate synaptic matrix
         w = np.random.uniform(0.1, 0.5, (n_neurons, n_neurons))
-
-        # Create inhibitory synapses
-        # w[self.num_exc:, :] *= -1
 
         # prune synapses
         w[wp < (1 - p.P_syn)] = 0
@@ -113,10 +107,7 @@ class Network():
         # print(self.w[:,-2])
 
         # Synaptic conductance delays
-        # delays = np.array(np.random.randint(p.d_min, p.d_max,
-        #                             (n_neurons, n_neurons)) / p.dt,
-        #                             dtype=np.int16)
-        delays = np.array(util.random.integers(p.d_min, p.d_max,
+        delays = np.array(self.random.integers(p.d_min, p.d_max,
                                     (n_neurons, n_neurons)) / p.dt,
                                     dtype=np.int16)
         max_delay = int(np.max(delays))
@@ -156,7 +147,7 @@ class Network():
 
         # Reward modulation
         self.reward = np.zeros((n_neurons, n_neurons))
-        self.last_reward = np.zeros((n_neurons, n_neurons))
+        # self.last_reward = np.zeros((n_neurons, n_neurons))
 
         # Reward eligibility
         self.E_syn = np.zeros((n_neurons, n_neurons))
@@ -174,8 +165,7 @@ class Network():
 
         self.time_acc += p.dt
 
-        # self.I_ext[:] = (p.I_ext_mean + np.random.normal(0, p.I_ext_std, nN)) * int(p.I_ext_enable)
-        self.I_ext[:] = (p.I_ext_mean + util.random.normal(0, p.I_ext_std, nN)) * int(p.I_ext_enable)
+        self.I_ext[:] = (p.I_ext_mean + self.random.normal(0, p.I_ext_std, nN)) * int(p.I_ext_enable)
         self.I_syn[:] *= np.exp(-p.dt / p.tau_s)
 
         self.I_ext[:] += p.I_ext_adaptive_scale * (p.F_t - self.firing_rates) / p.F_t * int(p.I_ext_enable) * int(p.I_ext_adaptive)
@@ -210,10 +200,10 @@ class Network():
         if not self.params.learning_enabled:
             return
 
-        r = util.random.random() > (1 - p.P_syn_gen)
+        r = self.random.random() > (1 - p.P_syn_gen)
 
-        i = util.random.integers(0, self.num_neurons) * int(r)
-        j = util.random.integers(0, self.num_neurons) * int(r)
+        i = self.random.integers(0, self.num_neurons) * int(r)
+        j = self.random.integers(0, self.num_neurons) * int(r)
 
         c = (i != j) and (self.w[i, j] == 0)
 
@@ -248,11 +238,10 @@ class Network():
         self.P_pre[:] *= np.exp(-p.dt / p.tau_plus)
         self.P_post[:] *= np.exp(-p.dt / p.tau_minus)
 
+        # Fresh start for weight changes each cycle
         self.dw[:] = 0
 
-        # decay synaptic connections
-        # self.w *= (1 - p.S_decay)
-
+        # Increment spike traces
         self.P_pre[self.spikes] += 1
         self.P_post[self.spikes] += 1
 
@@ -262,16 +251,23 @@ class Network():
         V_pre = self.V_pre
         V_post = self.V_post
 
+        # Calculate eligibility matrix
         self.E_syn += np.outer(self.P_pre, self.P_post)
 
+        # subthreshold membrane potentials and especially eligibility matrix
+        # can be in undesirable ranges. Smooth them and bring them to
+        # reasonable values with sigmoid.
         sigmoid_pre = 1 / (1 + np.exp(p.sigmoid_grad * (V_pre - p.v_threshold)))
         sigmoid_post = 1 / (1 + np.exp(p.sigmoid_grad * (V_post - p.v_threshold)))
         sigmoid_eligibility = 2 / (1 + np.exp(-p.sigmoid_grad * self.E_syn)) - 1
 
+        # Calculate long-term potentiation
+        # Though not biologically accurate, ltp is also applied to inhibitory synapses
         ltp_dw = (1 + p.r_scale_factor * self.reward * sigmoid_eligibility) * sigmoid_pre * sigmoid_post * p.A_plus * np.outer(self.P_pre, self.spikes)
         ltp_mask = np.outer(np.ones(nN, dtype=bool), self.spikes) & (~np.eye(nN, dtype=bool))
         self.dw += ltp_dw * ltp_mask
 
+        # Calculate long-term depression
         ltd_dw = -(1 + p.r_asymmetry * p.r_scale_factor * self.reward * sigmoid_eligibility) * sigmoid_pre * sigmoid_post * p.A_minus * np.outer(self.spikes, self.P_post)
         ltd_mask = np.outer(self.spikes, np.ones(nN, dtype=bool)) & (~np.eye(nN, dtype=bool))
         self.dw += ltd_dw * ltd_mask
@@ -280,19 +276,16 @@ class Network():
 
         self.reward[:] = np.clip(self.reward, p.r_min, p.r_max)
 
-        self.last_reward[:] = self.reward
         self.reward[:] *= np.exp(-p.dt / p.tau_r)
 
         self.E_syn[:] *= np.exp(-p.dt / p.tau_e)
 
         # Synaptic scaling for homeostasis
+        # Based on neuron firing rate.
         if self.time_acc > p.tau_scale:
             self.time_acc = 0
             scale = 1 + p.eta_s * (p.F_t - self.firing_rates) / p.F_t
             self.w *= scale[np.newaxis, :]
-            # Didn't work quite as well..
-            # norm = np.linalg.norm(self.w, axis=0)
-            # self.w[:, norm > 0] *= 2 / norm[norm > 0]
 
         self.w = np.clip(self.w, 0, 1)
 

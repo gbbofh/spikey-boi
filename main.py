@@ -1,10 +1,9 @@
-#!/usr/bin/env python3
+import spikeyboi.app
 
-import app
 
 def main():
-    wnd = app.App()
-    wnd.main()
+    app = spikeyboi.app.App()
+    app.main_loop()
 
 if __name__ == '__main__':
     main()
