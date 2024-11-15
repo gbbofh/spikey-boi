@@ -1,3 +1,4 @@
+import spikeyboi.ui.menubar
 import spikeyboi.ui.viewport
 
 
@@ -18,7 +19,8 @@ class App():
 
         self.manager = gui.UIManager(size)
 
-        self.viewport = spikeyboi.ui.viewport.UIViewport(pg.Rect((0,0),size), self.manager)
+        self.menubar = spikeyboi.ui.menubar.UIMenuBar(pg.Rect((0,0),(size[0],30)), self.manager, {})
+        self.viewport = spikeyboi.ui.viewport.UIViewport(pg.Rect((0,0),(size[0], size[1] - 30)), self.manager, anchors={'top_target': self.menubar})
 
         self.buffer = pg.Surface(self.display.size, pg.SRCALPHA)
 

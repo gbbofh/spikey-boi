@@ -9,8 +9,8 @@ import spikeyboi.spikey.sim
 
 class UIViewport(gui.elements.UIPanel):
 
-    def __init__(self, relative_rect: pg.Rect, manager: gui.UIManager):
-        super().__init__(relative_rect, manager=manager)
+    def __init__(self, relative_rect: pg.Rect, manager: gui.UIManager, *args, **kwargs):
+        super().__init__(relative_rect, manager=manager, *args, **kwargs)
 
         self.sim = spikeyboi.spikey.sim.Simulation()
 
