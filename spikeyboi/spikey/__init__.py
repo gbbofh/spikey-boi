@@ -1,6 +1,7 @@
 import numpy as np
 import pygame as pg
 
+sim_instance = None
 random = np.random.default_rng()
 
 def fixed_update(self, *args, **kwargs):

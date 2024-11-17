@@ -2,6 +2,7 @@ import numpy as np
 import pygame as pg
 
 
+import spikeyboi.spikey
 import spikeyboi.spikey.brain
 
 
@@ -25,7 +26,8 @@ class Agent(pg.sprite.Sprite):
 
         pg.draw.polygon(self.image, (255,255,255), self.vertices)
 
-        self.brain = spikeyboi.spikey.brain.Brain(50, 16, 2)
+        self.brain = spikeyboi.spikey.brain.Brain(50, 5, 2)
+        self.on_agent_moved_event = []
 
     def _make_rotation_matrix(self):
         m = [
@@ -36,31 +38,64 @@ class Agent(pg.sprite.Sprite):
         return np.array(m)
 
     def update(self, delta_time):
+        # x,y = self.rect.center
         self.brain.inputs[:] = spikeyboi.spikey.random.uniform(0, 1)
         self.brain.update(delta_time)
 
-        self.angle += self.brain.outputs[0] * delta_time
-        self.angle -= self.brain.outputs[1] * delta_time
+        # self.angle += self.brain.outputs[0] * delta_time
+        # self.angle -= self.brain.outputs[1] * delta_time
+
+        # fwd_speed = self.brain.outputs.sum() / self.brain.outputs.size
+
+        # # Testing movement
+        # forward = self.get_forward()
+        # self.x += 10 * forward[0] * delta_time * fwd_speed
+        # self.y -= 10 * forward[1] * delta_time * fwd_speed
+
+        # m = self._make_rotation_matrix()
+        # self.image.fill((0,0,0,0))
+        # v = self.vertices @ m
+        # v[:,0] += self.image.get_size()[0] / 2
+        # v[:,1] += self.image.get_size()[1] / 2
+        # self.rect.x = self.x
+        # self.rect.y = self.y
+
+        # dx = np.abs(self.rect.centerx - x)
+        # dy = np.abs(self.rect.centery - y)
+
+        # # if dx > 3 or dy > 3:
+        # #     for e in self.on_agent_moved_event:
+        # #         e(self)
+
+        # pg.draw.polygon(self.image, (255,255,255), v)
+
+    def fixed_update(self, fixed_delta):
+        # qt = spikeyboi.spikey.sim_instance.quadtree
+        # cx, cy = self.rect.center
+        # size = 100
+        # rect = pg.Rect(cx - size // 2, cy - size // 2, size, size)
+        # items = qt.hit(rect, exclude=self)
+
+        x,y = self.rect.center
+        self.angle += 0.2 * self.brain.outputs[0] * fixed_delta
+        self.angle -= 0.2 * self.brain.outputs[1] * fixed_delta
 
         fwd_speed = self.brain.outputs.sum() / self.brain.outputs.size
 
         # Testing movement
         forward = self.get_forward()
-        self.x += 10 * forward[0] * delta_time * fwd_speed
-        self.y -= 10 * forward[1] * delta_time * fwd_speed
+        self.x += 2 * forward[0] * fixed_delta * fwd_speed
+        self.y -= 2 * forward[1] * fixed_delta * fwd_speed
 
         m = self._make_rotation_matrix()
         self.image.fill((0,0,0,0))
         v = self.vertices @ m
         v[:,0] += self.image.get_size()[0] / 2
         v[:,1] += self.image.get_size()[1] / 2
-        print(self.x, self.y)
         self.rect.x = self.x
         self.rect.y = self.y
-        pg.draw.polygon(self.image, (255,255,255), v)
 
-    def fixed_update(self, fixed_delta):
-        pass
+        pg.draw.polygon(self.image, (255,255,255), v)
 
     def get_forward(self):
         return np.array([np.cos(self.angle), np.sin(self.angle)])

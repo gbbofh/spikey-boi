@@ -17,6 +17,7 @@ class FoodSource():
         self.radius = 100
         self.pool = []
         self.on_lifetime_exceeded_event = []
+        self.on_object_moved_event = []
 
         r = spikeyboi.spikey.random.uniform(0, self.radius, max_food)
         a = spikeyboi.spikey.random.uniform(0, 2 * np.pi, max_food)
@@ -31,11 +32,11 @@ class FoodSource():
             food.on_lifetime_exceeded_event.append(self.on_food_collision)
 
         self.groups = groups
-        self.render_list = None
-        for group in self.groups:
-            if isinstance(group, pg.sprite.RenderUpdates):
-                self.render_list = group
-                break
+        # self.render_list = None
+        # for group in self.groups:
+        #     if isinstance(group, pg.sprite.RenderUpdates):
+        #         self.render_list = group
+        #         break
 
     def update(self, delta_time):
         self.lifetime += delta_time
@@ -58,8 +59,12 @@ class FoodSource():
             f.rect.x = x
             f.rect.y = y
             f.max_life = lifetime
+            spikeyboi.spikey.sim_instance.render_list.add(f)
+            spikeyboi.spikey.sim_instance.physics_group.add(f)
 
-            self.render_list.add(f)
+            # self.render_list.add(f)
 
     def on_food_collision(self, food):
         self.pool.append(food)
+        for e in self.on_object_moved_event:
+            e(food)
