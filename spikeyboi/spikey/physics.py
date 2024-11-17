@@ -83,78 +83,130 @@ class Physics():
                 if hasattr(obj, 'y'):
                     obj.y += overlap_y if not is_static else 0
 
-    def cast_ray(self, origin, direction, max_distance):
+    def cast_ray(self, origin, direction, max_distance, exclude=None):
+        """
+        Cast a ray from origin in the given direction and return the first collision.
+        
+        Args:
+            origin: Tuple or numpy array (x, y) of ray origin
+            direction: Normalized direction vector
+            max_distance: Maximum distance to check
+            exclude: Set of objects to exclude from check
+            
+        Returns:
+            Tuple of (hit_object, hit_point, distance) or None if no hit
+        """
+        exclude = exclude or set()
         origin = np.array(origin)
-        direction = np.array(direction)
-
+        direction = np.array(direction) 
+        direction = direction / np.linalg.norm(direction)  # Ensure normalized
+        
         end = origin + direction * max_distance
-
-        line = (origin, end)
-
-        rect = pg.Rect((min(origin[0], end[0]), min(origin[1], end[1])), np.abs(end - origin))
-        candidates = self.quadtree.hit(rect)
-
+        
+        # Create bounding rectangle for broad phase
+        min_x = min(origin[0], end[0])
+        min_y = min(origin[1], end[1])
+        width = abs(end[0] - origin[0])
+        height = abs(end[1] - origin[1])
+        
+        broad_rect = pg.Rect(min_x, min_y, width + 1, height + 1)
+        candidates = self.quadtree.hit(broad_rect)
+        
         closest_hit = None
         closest_distance = max_distance
-        hit_point = None
+        closest_point = None
 
         for obj in candidates:
-            if not hasattr(obj, 'rect') or not hasattr(obj, 'mask'):
+            if obj in exclude or not hasattr(obj, 'rect') or not hasattr(obj, 'mask'):
                 continue
 
-            if not self.line_intersects_rect(line, obj.rect):
+            # First do a quick line-rect test
+            if not self.line_intersects_rect((origin, end), obj.rect):
                 continue
-
-            obj_off = (obj.rect.x - origin[0], obj.rect.y - origin[1])
-            mask_hit = obj.mask.overlap_mask(self.ray_mask(line, max_distance), obj_off)
-
-            if mask_hit.count():
-                lhp = np.array(mask_hit.centroid())
-                hit_point = lhp + (obj.rect.x, obj.rect.y)
-                delta = hit_point - origin
-
-                dist = np.linalg.norm(delta)
-
-                if dist < closest_distance:
-                    closest_distance = dist
-                    closest_hit = obj
-
-        print(closest_hit, hit_point, closest_distance)
+                
+            # Create ray mask in object's local space
+            local_origin = (origin[0] - obj.rect.x, origin[1] - obj.rect.y)
+            local_end = (end[0] - obj.rect.x, end[1] - obj.rect.y)
+            
+            # Create a surface exactly the size of the object
+            ray_surface = pg.Surface(obj.rect.size, pg.SRCALPHA)
+            
+            # Draw the line in object space
+            pg.draw.line(ray_surface, (255, 255, 255, 255), local_origin, local_end)
+            ray_mask = pg.mask.from_surface(ray_surface)
+            pg.image.save(ray_mask.to_surface(), "ray_mask_debug.png")
+            
+            # Check for collision with object's mask
+            overlap = obj.mask.overlap_mask(ray_mask, (0, 0))
+            if overlap.count() > 0:
+                # Get the first collision point
+                overlap_points = overlap.outline()
+                if overlap_points:
+                    # Convert local hit point back to world space
+                    local_hit = overlap_points[0]
+                    hit_point = np.array((
+                        local_hit[0] + obj.rect.x,
+                        local_hit[1] + obj.rect.y
+                    ))
+                    
+                    # Calculate distance
+                    dist = np.linalg.norm(hit_point - origin)
+                    
+                    if dist < closest_distance:
+                        closest_distance = dist
+                        closest_hit = obj
+                        closest_point = hit_point
 
         if closest_hit is None:
             return None
-
-        return (closest_hit, hit_point, closest_distance)
-
+            
+        return (closest_hit, closest_point, closest_distance)
 
     def line_intersects_rect(self, line, rect):
-
-        lines = [
-            ((rect.left, rect.top), (rect.right, rect.top)),
-            ((rect.right, rect.top), (rect.right, rect.bottom)),
-            ((rect.left, rect.bottom), (rect.right, rect.bottom)),
-            ((rect.left, rect.top), (rect.left, rect.bottom)),
-        ]
-
-        for rect_line in lines:
-            if self.line_intersects_line(line, rect_line):
-                return True
-        return False
-
-    def line_intersects_line(self, l1, l2):
-        def ccw(A,B,C):
-            return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
-
-        A,B = l1
-        C,D = l2
-
-        return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
-
-    def ray_mask(self, line, max_distance):
+        """
+        Test if a line segment intersects with a rectangle.
+        Uses Cohen-Sutherland algorithm for efficiency.
+        """
         start, end = line
-        w, h = max_distance, max_distance
+        
+        def get_outcode(x, y):
+            code = 0
+            if x < rect.left: code |= 1
+            if x > rect.right: code |= 2
+            if y < rect.top: code |= 4
+            if y > rect.bottom: code |= 8
+            return code
+            
+        outcode1 = get_outcode(start[0], start[1])
+        outcode2 = get_outcode(end[0], end[1])
+        
+        while True:
+            if not (outcode1 | outcode2):  # Both points inside
+                return True
+            if (outcode1 & outcode2):  # Both points on same side
+                return False
+                
+            # Pick an outside point
+            outcode = outcode1 if outcode1 else outcode2
+            
+            # Find intersection point
+            if outcode & 8:  # Above
+                x = start[0] + (end[0] - start[0]) * (rect.bottom - start[1]) / (end[1] - start[1])
+                y = rect.bottom
+            elif outcode & 4:  # Below
+                x = start[0] + (end[0] - start[0]) * (rect.top - start[1]) / (end[1] - start[1])
+                y = rect.top
+            elif outcode & 2:  # Right
+                y = start[1] + (end[1] - start[1]) * (rect.right - start[0]) / (end[0] - start[0])
+                x = rect.right
+            else:  # Left
+                y = start[1] + (end[1] - start[1]) * (rect.left - start[0]) / (end[0] - start[0])
+                x = rect.left
+                
+            if outcode == outcode1:
+                start = (x, y)
+                outcode1 = get_outcode(x, y)
+            else:
+                end = (x, y)
+                outcode2 = get_outcode(x, y)
 
-        image = pg.Surface((w,h), pg.SRCALPHA)
-        pg.draw.line(image, (255,255,255), (0,0), end - start)
-
-        return pg.mask.from_surface(image)
