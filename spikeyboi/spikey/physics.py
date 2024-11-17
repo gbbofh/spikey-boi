@@ -1,9 +1,11 @@
+import numpy as np
 import pygame as pg
 
 
 import spikeyboi.spikey
 
 
+# TODO: Update physics to make use of collision masks?
 class Physics():
 
     def __init__(self, physics_group: pg.sprite.Group):
@@ -32,7 +34,6 @@ class Physics():
 
                 # Find potential collisions
                 candidates = self.quadtree.hit(obj.rect)
-                print(obj,candidates)
 
                 for other in candidates:
                     if obj == other or not hasattr(other, "rect"):
@@ -81,3 +82,79 @@ class Physics():
                 obj.rect.top += overlap_y if not is_static else 0
                 if hasattr(obj, 'y'):
                     obj.y += overlap_y if not is_static else 0
+
+    def cast_ray(self, origin, direction, max_distance):
+        origin = np.array(origin)
+        direction = np.array(direction)
+
+        end = origin + direction * max_distance
+
+        line = (origin, end)
+
+        rect = pg.Rect((min(origin[0], end[0]), min(origin[1], end[1])), np.abs(end - origin))
+        candidates = self.quadtree.hit(rect)
+
+        closest_hit = None
+        closest_distance = max_distance
+        hit_point = None
+
+        for obj in candidates:
+            if not hasattr(obj, 'rect') or not hasattr(obj, 'mask'):
+                continue
+
+            if not self.line_intersects_rect(line, obj.rect):
+                continue
+
+            obj_off = (obj.rect.x - origin[0], obj.rect.y - origin[1])
+            mask_hit = obj.mask.overlap_mask(self.ray_mask(line, max_distance), obj_off)
+
+            if mask_hit.count():
+                lhp = np.array(mask_hit.centroid())
+                hit_point = lhp + (obj.rect.x, obj.rect.y)
+                delta = hit_point - origin
+
+                dist = np.linalg.norm(delta)
+
+                if dist < closest_distance:
+                    closest_distance = dist
+                    closest_hit = obj
+
+        print(closest_hit, hit_point, closest_distance)
+
+        if closest_hit is None:
+            return None
+
+        return (closest_hit, hit_point, closest_distance)
+
+
+    def line_intersects_rect(self, line, rect):
+
+        lines = [
+            ((rect.left, rect.top), (rect.right, rect.top)),
+            ((rect.right, rect.top), (rect.right, rect.bottom)),
+            ((rect.left, rect.bottom), (rect.right, rect.bottom)),
+            ((rect.left, rect.top), (rect.left, rect.bottom)),
+        ]
+
+        for rect_line in lines:
+            if self.line_intersects_line(line, rect_line):
+                return True
+        return False
+
+    def line_intersects_line(self, l1, l2):
+        def ccw(A,B,C):
+            return (C[1] - A[1]) * (B[0] - A[0]) > (B[1] - A[1]) * (C[0] - A[0])
+
+        A,B = l1
+        C,D = l2
+
+        return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
+
+    def ray_mask(self, line, max_distance):
+        start, end = line
+        w, h = max_distance, max_distance
+
+        image = pg.Surface((w,h), pg.SRCALPHA)
+        pg.draw.line(image, (255,255,255), (0,0), end - start)
+
+        return pg.mask.from_surface(image)

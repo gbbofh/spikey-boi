@@ -22,6 +22,7 @@ class Simulation():
 
         agent = spikeyboi.spikey.agent.Agent(self.agent_group, self.physics_group, self.all_entities, self.render_list)
         agent.x, agent.y = 100, 100
+        self.agent = agent
         # agent.rect.x, agent.rect.y = 100, 100
         # agent.on_agent_moved_event.append(self.on_object_moved)
 
@@ -74,6 +75,8 @@ class Simulation():
         self.size = self.rect.size
         self.render_list.draw(surface)
         self.quadtree.debug_draw(surface)
+
+        self.agent.debug_draw(surface)
 
     def on_food_source_lifetime_exceeded(self, food_source):
         x = spikeyboi.spikey.random.uniform(0, 1) * self.size[0]

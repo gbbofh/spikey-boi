@@ -26,6 +26,8 @@ class Agent(pg.sprite.Sprite):
 
         pg.draw.polygon(self.image, (255,255,255), self.vertices)
 
+        self.mask = pg.mask.from_surface(self.image)
+
         self.brain = spikeyboi.spikey.brain.Brain(50, 5, 2)
         self.on_agent_moved_event = []
 
@@ -85,7 +87,7 @@ class Agent(pg.sprite.Sprite):
         # Testing movement
         forward = self.get_forward()
         self.x += 2 * forward[0] * fixed_delta * fwd_speed
-        self.y -= 2 * forward[1] * fixed_delta * fwd_speed
+        self.y += 2 * forward[1] * fixed_delta * fwd_speed
 
         m = self._make_rotation_matrix()
         self.image.fill((0,0,0,0))
@@ -95,10 +97,16 @@ class Agent(pg.sprite.Sprite):
         self.rect.x = self.x
         self.rect.y = self.y
 
+        hit = spikeyboi.spikey.sim_instance.physics.cast_ray(self.rect.center, forward, 300)
+        if hit:
+            obj, pt, dist = hit
+            print(f'Ray: {obj}, {pt}, {dist}')
+
         pg.draw.polygon(self.image, (255,255,255), v)
+        self.mask = pg.mask.from_surface(self.image)
 
     def get_forward(self):
-        return np.array([np.cos(self.angle), np.sin(self.angle)])
+        return np.array([np.cos(self.angle), -np.sin(self.angle)])
 
     def get_angle(self):
         if not self.target:
@@ -117,4 +125,8 @@ class Agent(pg.sprite.Sprite):
         c = u[0] * v[1] - u[1] * v[0]
 
         return angle * np.sign(c)
+
+    def debug_draw(self, surface):
+
+        pg.draw.line(surface, (255,255,255), self.rect.center, self.get_forward() * 300)
 
