@@ -28,12 +28,8 @@ class UIDebugWindow(gui.elements.UIWindow):
         self.sim = spikeyboi.spikey.sim_instance
         self.kernel = None
 
-    def process_event(self, e):
-        handled = super().process_event(e)
-        return handled
-
     def update(self, delta_time):
-        pass
+        super().update(delta_time)
 
         # net : spikeyboi.snn.network.Network = self.sim.agent.brain.net
 

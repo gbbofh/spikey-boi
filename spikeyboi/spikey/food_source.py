@@ -23,7 +23,8 @@ class FoodSource():
         a = spikeyboi.spikey.random.uniform(0, 2 * np.pi, max_food)
         x = self.pos[0] + r * np.cos(a)
         y = self.pos[1] + r * np.sin(a)
-        lifetime = spikeyboi.spikey.random.uniform(30.0, 45.0, max_food)
+        # lifetime = spikeyboi.spikey.random.uniform(30.0, 45.0, max_food)
+        lifetime = np.ones(max_food) * -1
 
         for i in range(max_food):
             food = spikeyboi.spikey.food.Food(lifetime[i], groups)

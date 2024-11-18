@@ -11,7 +11,7 @@ class Food(pg.sprite.Sprite):
         super().__init__(group)
         self.color = np.array((50, 200, 100))
 
-        self.image = pg.Surface((15,15), pg.SRCALPHA)
+        self.image = pg.Surface((20,20), pg.SRCALPHA)
         self.rect = self.image.get_rect()
 
         self.color[1] = spikeyboi.spikey.random.integers(120, 200)
@@ -27,6 +27,11 @@ class Food(pg.sprite.Sprite):
     def update(self, delta_time):
         self.lifetime += delta_time
         render_list = spikeyboi.spikey.sim_instance.render_list
+
+        if self.max_life < 0:
+            self.lifetime = 0.0
+            return
+
         if self.lifetime >= self.max_life and render_list is not None:
             self.on_lifetime_exceeded()
 

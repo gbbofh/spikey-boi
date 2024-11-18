@@ -8,7 +8,7 @@ import spikeyboi.ui
 import spikeyboi.ui.debug_window
 
 
-class UISynapseDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
+class UIRewardDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -23,14 +23,20 @@ class UISynapseDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
     def update(self, delta_time):
         super().update(delta_time)
 
-        w = (self.net.w * self.net.neuron_type[:, np.newaxis] + 1) / 2
-        w = w.T
+        r = self.net.reward.copy().T
+        r_min = self.net.params.r_min
 
-        values = w
+        r += np.abs(r_min)
+        r /= 2 * self.net.params.r_max
+
+        # w = (self.net.w * self.net.neuron_type[:, np.newaxis] + 1) / 2
+        # w = w.T
+
+        values = r
         if not (self.kernel is None):
-            values = sp.ndimage.convolve(w, self.kernel)
+            values = sp.ndimage.convolve(r, self.kernel)
 
-        rgba = spikeyboi.ui.colormaps['rdgr'](values)
+        rgba = spikeyboi.ui.colormaps['rdbu'](values)
 
         pg.surfarray.blit_array(self.buffer, rgba[:,:,:-1])
 

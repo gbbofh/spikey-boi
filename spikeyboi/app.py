@@ -2,6 +2,7 @@ import spikeyboi.ui.menubar
 import spikeyboi.ui.viewport
 import spikeyboi.ui.debug_window
 import spikeyboi.ui.synapse_debug
+import spikeyboi.ui.reward_debug
 
 
 import pygame as pg
@@ -23,7 +24,7 @@ class App():
 
         self.menubar = spikeyboi.ui.menubar.UIMenuBar(pg.Rect((0,0),(size[0],30)), self.manager, {})
         self.viewport = spikeyboi.ui.viewport.UIViewport(pg.Rect((0,0),(size[0], size[1] - 30)), self.manager, anchors={'top_target': self.menubar})
-        self.debug_window = spikeyboi.ui.synapse_debug.UISynapseDebugger('Test', (100,100, 400, 400), self.manager)
+        self.debug_window = spikeyboi.ui.reward_debug.UIRewardDebugger('Test', (100,100, 400, 400), self.manager)
 
         self.buffer = pg.Surface(self.display.size, pg.SRCALPHA)
 
