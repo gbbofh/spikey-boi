@@ -23,7 +23,7 @@ class FoodSource():
         a = spikeyboi.spikey.random.uniform(0, 2 * np.pi, max_food)
         x = self.pos[0] + r * np.cos(a)
         y = self.pos[1] + r * np.sin(a)
-        lifetime = spikeyboi.spikey.random.uniform(1.0, 5.0, max_food)
+        lifetime = spikeyboi.spikey.random.uniform(30.0, 45.0, max_food)
 
         for i in range(max_food):
             food = spikeyboi.spikey.food.Food(lifetime[i], groups)
@@ -40,6 +40,8 @@ class FoodSource():
 
     def update(self, delta_time):
         self.lifetime += delta_time
+        if self.max_life < 0:
+            self.lifetime = self.max_life - 1
 
         if self.lifetime >= self.max_life:
             self.lifetime = 0
@@ -59,10 +61,9 @@ class FoodSource():
             f.rect.x = x
             f.rect.y = y
             f.max_life = lifetime
+
             spikeyboi.spikey.sim_instance.render_list.add(f)
             spikeyboi.spikey.sim_instance.physics_group.add(f)
-
-            # self.render_list.add(f)
 
     def on_food_collision(self, food):
         self.pool.append(food)

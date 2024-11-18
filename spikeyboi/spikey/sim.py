@@ -23,12 +23,9 @@ class Simulation():
         agent = spikeyboi.spikey.agent.Agent(self.agent_group, self.physics_group, self.all_entities, self.render_list)
         agent.x, agent.y = 100, 100
         self.agent = agent
-        # agent.rect.x, agent.rect.y = 100, 100
-        # agent.on_agent_moved_event.append(self.on_object_moved)
 
-        self.food_source = spikeyboi.spikey.food_source.FoodSource((200,200), 50, 25, 5.0, self.food_group, self.all_entities, self.physics_group, self.render_list)
+        self.food_source = spikeyboi.spikey.food_source.FoodSource((200,200), 50, 25, -1.0, self.food_group, self.all_entities, self.physics_group, self.render_list)
         self.food_source.on_lifetime_exceeded_event.append(self.on_food_source_lifetime_exceeded)
-        # self.food_source.on_object_moved_event.append(self.on_object_moved)
 
         wall_thickness = 50
 
@@ -63,8 +60,6 @@ class Simulation():
             self.time -= self.fixed_delta_time
 
     def fixed_update(self, fixed_delta):
-        # self.agent_group.fixed_update(fixed_delta)
-        # self.food_group.fixed_update(fixed_delta)
         self.all_entities.fixed_update(fixed_delta)
         self.physics.fixed_update(fixed_delta)
 
@@ -83,9 +78,6 @@ class Simulation():
         y = spikeyboi.spikey.random.uniform(0, 1) * self.size[1]
 
         food_source.pos = (x,y)
-
-    # def on_object_moved(self, object):
-    #     self.quadtree.rebuild(list(self.all_entities), (0,0,800,600), 3)
 
 if __name__ == '__main__':
     sim = Simulation()

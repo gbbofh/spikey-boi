@@ -1,5 +1,6 @@
 import spikeyboi.ui.menubar
 import spikeyboi.ui.viewport
+import spikeyboi.ui.debug_window
 
 
 import pygame as pg
@@ -21,6 +22,7 @@ class App():
 
         self.menubar = spikeyboi.ui.menubar.UIMenuBar(pg.Rect((0,0),(size[0],30)), self.manager, {})
         self.viewport = spikeyboi.ui.viewport.UIViewport(pg.Rect((0,0),(size[0], size[1] - 30)), self.manager, anchors={'top_target': self.menubar})
+        self.debug_window = spikeyboi.ui.debug_window.UIDebugWindow('Test', (30,30, 400, 400), self.manager)
 
         self.buffer = pg.Surface(self.display.size, pg.SRCALPHA)
 
@@ -28,6 +30,7 @@ class App():
         for e in pg.event.get():
             if e.type == pg.QUIT:
                 self.run = False
+            self.manager.process_events(e)
 
     def update(self, delta_time):
         self.manager.update(delta_time)

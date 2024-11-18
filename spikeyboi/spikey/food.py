@@ -27,7 +27,6 @@ class Food(pg.sprite.Sprite):
     def update(self, delta_time):
         self.lifetime += delta_time
         render_list = spikeyboi.spikey.sim_instance.render_list
-        # render_list = self.get_render_group()
         if self.lifetime >= self.max_life and render_list is not None:
             self.on_lifetime_exceeded()
 
@@ -35,27 +34,15 @@ class Food(pg.sprite.Sprite):
         if type(other) == type(self):
             return
 
-        # render_list = self.get_render_group()
-        # render_list.remove(self)
-        render_list = spikeyboi.spikey.sim_instance.render_list
-        render_list.remove(self)
+        spikeyboi.spikey.sim_instance.render_list.remove(self)
         spikeyboi.spikey.sim_instance.physics_group.remove(self)
 
         for e in self.on_collision_event:
             e(self)
 
     def on_lifetime_exceeded(self):
-        render_list = self.get_render_group()
-        render_list.remove(self)
+        spikeyboi.spikey.sim_instance.render_list.remove(self)
+        spikeyboi.spikey.sim_instance.physics_group.remove(self)
         self.lifetime = 0.0
         for e in self.on_lifetime_exceeded_event:
             e(self)
-
-        # for e in self.on_collision_event:
-        #     self.on_collision_event(self)
-
-    def get_render_group(self):
-        for group in self.groups():
-            if isinstance(group, pg.sprite.RenderUpdates):
-                return group
-        return None

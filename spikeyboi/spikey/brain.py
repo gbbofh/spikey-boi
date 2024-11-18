@@ -15,8 +15,14 @@ class Brain():
 
     def __init__(self, num_neurons: int, num_inputs: int, num_outputs: int):
         self.net = spikeyboi.snn.network.Network(num_neurons, params=Brain.params)
-        self.inputs = self.net.I_inj[:num_inputs + 1]
-        self.outputs = self.net.firing_rates[num_inputs:num_inputs + num_outputs + 1]
+        self.inputs = self.net.I_inj[:num_inputs]
+        self.outputs = self.net.firing_rates[num_inputs:num_inputs + num_outputs]
+        self.rewards = self.net.reward
+
+        self.input_first = 0
+        self.input_last = num_inputs - 1
+        self.output_first = num_inputs
+        self.output_last = num_inputs + num_outputs
 
     def update(self, delta_time):
         self.net.update()

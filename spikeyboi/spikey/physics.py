@@ -17,7 +17,7 @@ class Physics():
         Perform collision detection and resolution.
         """
         # Rebuild the quadtree
-        self.quadtree.rebuild(list(self.objects), self.quadtree.bounding_rect, 2)
+        self.quadtree.rebuild(list(self.objects), self.quadtree.bounding_rect, 5)
 
         # Resolve collisions iteratively
         unresolved = True
