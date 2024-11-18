@@ -1,4 +1,4 @@
-import spikeyboi.spikey
+import numpy as np
 
 
 def gradient_map(self, color_stops=None):
