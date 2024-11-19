@@ -15,7 +15,7 @@ class UIDebugWindow(gui.elements.UIWindow):
 
     def __init__(self, title, rect, manager):
         rect = pg.Rect(rect)
-        super().__init__(rect, manager, title, visible=False)
+        super().__init__(rect, manager, title, visible=False, always_on_top=True)
 
         surf_size = self.get_container().get_size()
         surf_rect = pg.Rect((0,0), surf_size)
@@ -30,3 +30,7 @@ class UIDebugWindow(gui.elements.UIWindow):
 
     def update(self, delta_time):
         super().update(delta_time)
+
+    def on_close_window_button_pressed(self):
+        self.hide()
+
