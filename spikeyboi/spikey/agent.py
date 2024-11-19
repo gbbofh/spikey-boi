@@ -51,6 +51,7 @@ class Agent(pg.sprite.Sprite):
         sim = spikeyboi.spikey.sim_instance
 
         hits = []
+        self.distances[:] = 0
 
         for i,a in enumerate(self.ray_angles):
             angle_plus = self.angle + a
@@ -132,13 +133,18 @@ class Agent(pg.sprite.Sprite):
 
     def on_collision(self, other):
         if type(other) == spikeyboi.spikey.food.Food:
-            self.brain.rewards[:,self.brain.output_first:self.brain.output_last + 1] += 0.5
-            self.brain.rewards[:,self.brain.input_first:self.brain.input_last + 1] += 0.3
+            self.brain.rewards[:,self.brain.output_first:self.brain.output_last + 1] += 0.5 * spikeyboi.spikey.sim_instance.fixed_delta_time
+            self.brain.rewards[self.brain.input_first:self.brain.input_last + 1,:] += 0.3 * spikeyboi.spikey.sim_instance.fixed_delta_time
         elif type(other) == spikeyboi.spikey.wall.Wall:
-            ltd = 0 if self.brain.outputs[0] > self.brain.outputs[1] else 1
+            ltd = self.brain.output_first if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_last
             ltp = int(not ltd)
-            self.brain.rewards[ltp,:] += 0.1
-            self.brain.rewards[ltd,:] -= 0.2
+            mask = self.distances > 0
+            r = self.brain.rewards[:len(self.distances)]
+
+            r[mask, :] += 0.1 * spikeyboi.spikey.sim_instance.fixed_delta_time
+            # self.brain.rewards[self.distances > 0,:] += 0.1 * spikeyboi.spikey.sim_instance.fixed_delta_time
+            self.brain.rewards[:,ltp] += 0.1 * spikeyboi.spikey.sim_instance.fixed_delta_time
+            self.brain.rewards[:,ltd] -= 0.2 * spikeyboi.spikey.sim_instance.fixed_delta_time
             # self.brain.rewards[:,self.brain.output_first:self.brain.output_last + 1] += 0.5
             # self.brain.rewards[:,self.brain.input_first:self.brain.input_last + 1] += 0.3
 

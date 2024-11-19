@@ -1,23 +1,88 @@
-import pygame as pg
-import pygame_gui as gui
+import pygame
+import pygame_gui
 
+class UIMenuBar(pygame_gui.elements.UIPanel):
+    def __init__(self, relative_rect, manager, menu_data):
+        super().__init__(relative_rect, manager=manager)
 
-class UIMenuBar(gui.elements.UIPanel):
-
-    def __init__(self, rel_rect, manager, data):
-        super().__init__(rel_rect, manager=manager)
-
+        # Dictionary to hold menu buttons and their dropdown panels
         self.menu_buttons = {}
-        self.dropdowns = {}
+        self.dropdown_panels = {}
+        self.action_callbacks = {}
 
-        button_x = 10
-        for name, options in data.items():
-            rect = pg.Rect((button_x,0), (80,rel_rect.height))
-            btn = gui.elements.UIButton(rect, name, manager=manager, container=self)
-            self.menu_buttons[name] = btn
+        # Create menu buttons and dropdowns based on menu_data
+        button_x = 20
+        for menu_name, options in menu_data.items():
+            # Create the main menu button
+            button = pygame_gui.elements.UIButton(
+                relative_rect=pygame.Rect((button_x, 0), (80, relative_rect.height)),
+                text=menu_name,
+                manager=manager,
+                container=self
+            )
+            self.menu_buttons[menu_name] = button
 
-            rect = pg.Rect((button_x,rel_rect.height), (120,30*len(options)))
-            panel = gui.elements.UIPanel(rect, manager=manager, visible=False)
-            self.dropdowns[name] = panel
-            for i, opt in enumerate(options):
-                pass
+            # Create a hidden dropdown panel for the menu
+            dropdown_panel = pygame_gui.elements.UIPanel(
+                relative_rect=pygame.Rect((button_x, relative_rect.height), (120, 35 * len(options))),
+                manager=manager,
+                visible=False,
+                starting_height=10
+            )
+            self.dropdown_panels[menu_name] = dropdown_panel
+
+            # Create options in the dropdown
+            for i, option in enumerate(options):
+                option_button = pygame_gui.elements.UIButton(
+                    relative_rect=pygame.Rect((0, i * 30), (100, 30)),
+                    text=option,
+                    manager=manager,
+                    container=dropdown_panel,
+                    anchors={'centerx': 'centerx'}
+                )
+
+                # Store the action associated with the option
+                option_button.action = option
+
+            button_x += 90  # Adjust for the next button
+
+        # Track the open state of the dropdowns
+        self.open_dropdown = None
+
+    def bind_action(self, action, callback):
+        self.action_callbacks[action] = callback
+
+    def process_event(self, event):
+        # Handle button presses for menu options
+        if event.type == pygame.USEREVENT:
+            if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                # Check if a menu button was clicked
+                for menu_name, button in self.menu_buttons.items():
+                    if event.ui_element == button:
+                        # Toggle dropdown visibility
+                        if self.open_dropdown == menu_name:
+                            self.dropdown_panels[menu_name].hide()
+                            self.open_dropdown = None
+                        else:
+                            if self.open_dropdown is not None:
+                                # Hide the previously opened dropdown
+                                self.dropdown_panels[self.open_dropdown].hide()
+                            self.dropdown_panels[menu_name].show()
+                            self.open_dropdown = menu_name
+                        return True  # Event has been consumed
+
+                # Check if an option button was clicked in any dropdown
+                if self.open_dropdown is not None:
+                    for element in self.dropdown_panels[self.open_dropdown].get_container().elements:
+                        if event.ui_element == element:
+                            # Print once when an option is selected and immediately close the dropdown
+                            # print(f"{element.action} selected from {self.open_dropdown}")
+                            cb = self.action_callbacks.get(element.action, None)
+                            if cb:
+                                cb()
+                            self.dropdown_panels[self.open_dropdown].hide()
+                            self.open_dropdown = None
+                            return True  # Event has been consumed
+
+        return super().process_event(event)
+

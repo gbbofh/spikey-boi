@@ -61,7 +61,7 @@ class FoodSource():
 
             f.rect.x = x
             f.rect.y = y
-            f.max_life = lifetime
+            f.max_life = lifetime if f.max_life > -1 else -1
 
             spikeyboi.spikey.sim_instance.render_list.add(f)
             spikeyboi.spikey.sim_instance.physics_group.add(f)

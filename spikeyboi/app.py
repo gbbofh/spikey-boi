@@ -3,6 +3,7 @@ import spikeyboi.ui.viewport
 import spikeyboi.ui.debug_window
 import spikeyboi.ui.synapse_debug
 import spikeyboi.ui.reward_debug
+import spikeyboi.ui.fps_debug
 
 
 import pygame as pg
@@ -19,12 +20,26 @@ class App():
         self.run = True
         self.time_accum = 0.0
         self.fixed_delta_time = 0.03
+        self.size = size
 
         self.manager = gui.UIManager(size)
 
-        self.menubar = spikeyboi.ui.menubar.UIMenuBar(pg.Rect((0,0),(size[0],30)), self.manager, {})
+        menubar_data = {
+            'File': ['Save Brain', 'Load Brain'],
+            'View': ['Synapses', 'Rewards', 'Toggle FPS', 'Toggle Blur'],
+        }
+
+        self.menubar = spikeyboi.ui.menubar.UIMenuBar(pg.Rect((0,0),(size[0],30)), self.manager, menubar_data)
+        self.menubar.bind_action('Synapses', self.add_synapse_debug)
+        self.menubar.bind_action('Rewards', self.add_reward_debug)
+        self.menubar.bind_action('FPS', self.add_fps_debug)
+        self.menubar.bind_action('Toggle Blur', self.toggle_kernels)
+
         self.viewport = spikeyboi.ui.viewport.UIViewport(pg.Rect((0,0),(size[0], size[1] - 30)), self.manager, anchors={'top_target': self.menubar})
-        self.debug_window = spikeyboi.ui.reward_debug.UIRewardDebugger('Test', (100,100, 400, 400), self.manager)
+        self.sd_view = spikeyboi.ui.synapse_debug.UISynapseDebugger('Synaptic Weights', (100,100,300,300), self.manager)
+        self.rd_view = spikeyboi.ui.reward_debug.UIRewardDebugger('Synaptic Rewards', (100,100,300,300), self.manager)
+        self.fps_debug = spikeyboi.ui.fps_debug.UIFPSDebugger((-100,5), self.manager)
+        # self.debug_window = spikeyboi.ui.reward_debug.UIRewardDebugger('Test', (100,100, 400, 400), self.manager)
 
         self.buffer = pg.Surface(self.display.size, pg.SRCALPHA)
 
@@ -37,8 +52,29 @@ class App():
     def update(self, delta_time):
         self.manager.update(delta_time)
 
+    def add_synapse_debug(self):
+        if self.sd_view.visible:
+            self.sd_view.hide()
+        else:
+            self.sd_view.show()
+
+    def add_reward_debug(self):
+        if self.rd_view.visible:
+            self.rd_view.hide()
+        else:
+            self.rd_view.show()
+
+    def add_fps_debug(self):
+        if self.fps_debug.visible:
+            self.fps_debug.hide()
+        else:
+            self.fps_debug.show()
+
+    def toggle_kernels(self):
+        self.sd_view.kernel_enabled = not self.sd_view.kernel_enabled
+        self.rd_view.kernel_enabled = not self.rd_view.kernel_enabled
+
     def fixed_update(self, fixed_delta):
-        # self.manager.fixed_update(fixed_delta)
         pass
 
     def draw(self):
