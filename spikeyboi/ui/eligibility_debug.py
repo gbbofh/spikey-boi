@@ -48,4 +48,5 @@ class UIEligibilityDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
         pg.transform.scale(self.buffer, self.disp_surf.image.size, self.disp_surf.image)
 
-
+    def on_load_completed(self):
+        self.net = self.sim.agent.brain.net

@@ -25,7 +25,14 @@ class UISynapseDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
     def update(self, delta_time):
         super().update(delta_time)
 
-        w = (self.net.w * self.net.neuron_type[:, np.newaxis] + 1) / 2
+        # w = (self.net.w * self.net.neuron_type[:, np.newaxis] + 1) / 2
+        # w = w.T
+
+        w = self.net.w * self.net.neuron_type[:, np.newaxis]
+        w_min = np.abs(np.min(w))
+        w = w + w_min
+        w_max = np.max(w)
+        w = w / w_max if w_max != 0 else w
         w = w.T
 
         values = w
@@ -37,10 +44,16 @@ class UISynapseDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         self.buffer.fill((0,0,0,0))
         pg.surfarray.blit_array(self.buffer, rgba[:,:,:-1])
 
+        mask = self.net.w != 0
+        mask = ~mask
+
+        rgba[mask,:] = 0
+
         alpha = pg.surfarray.pixels_alpha(self.buffer)
         alpha[:] = rgba[:,:,-1]
         del alpha
 
         pg.transform.scale(self.buffer, self.disp_surf.image.size, self.disp_surf.image)
 
-
+    def on_load_completed(self):
+        self.net = self.sim.agent.brain.net

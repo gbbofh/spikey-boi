@@ -22,15 +22,16 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
         self.kernel_enabled = True
         self.data = np.zeros_like(self.net.dw)
-        self.alpha = 0.01
+        self.alpha = 0.6
 
     def update(self, delta_time):
         super().update(delta_time)
 
         # dw = (self.net.dw + 1) / 2
         dw = self.net.dw.copy().T
-        dw_min = np.abs(np.min(dw))
-        dw = dw + dw_min
+        dw = np.abs(dw)
+        # dw_min = np.abs(np.min(dw))
+        # dw = dw + dw_min
         dw_max = np.max(dw)
         dw = dw / dw_max if dw_max > 0 else dw
 
@@ -41,7 +42,7 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         if not (self.kernel is None) and self.kernel_enabled:
             values = sp.ndimage.convolve(self.data, self.kernel)
 
-        rgba = spikeyboi.ui.colormaps['magma'](values)
+        rgba = spikeyboi.ui.colormaps['inferno'](values)
 
         self.buffer.fill((0,0,0,0))
         pg.surfarray.blit_array(self.buffer, rgba[:,:,:-1])
@@ -52,4 +53,5 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
         pg.transform.scale(self.buffer, self.disp_surf.image.size, self.disp_surf.image)
 
-
+    def on_load_completed(self):
+        self.net = self.sim.agent.brain.net

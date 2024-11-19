@@ -3,6 +3,7 @@ import pygame as pg
 import pygame_gui as gui
 
 
+import spikeyboi
 import spikeyboi.spikey
 import spikeyboi.spikey.agent
 import spikeyboi.spikey.brain
@@ -28,9 +29,13 @@ class UIDebugWindow(gui.elements.UIWindow):
         self.sim = spikeyboi.spikey.sim_instance
         self.kernel = None
 
+        spikeyboi.app_instance.on_load_completed_event.append(self.on_load_completed)
+
     def update(self, delta_time):
         super().update(delta_time)
 
     def on_close_window_button_pressed(self):
         self.hide()
 
+    def on_load_completed(self):
+        pass

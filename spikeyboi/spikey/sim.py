@@ -1,6 +1,12 @@
 import numpy as np
 import pygame as pg
 
+
+import time
+import pickle
+
+
+import spikeyboi
 import spikeyboi.spikey
 import spikeyboi.spikey.agent
 import spikeyboi.spikey.food
@@ -14,6 +20,11 @@ class Simulation():
 
     def __init__(self, size=(800,600)):
         spikeyboi.spikey.sim_instance = self
+        self.app = spikeyboi.app_instance
+
+        self.rng_seed = int(time.time())
+        spikeyboi.spikey.random = np.random.default_rng(self.rng_seed)
+
         self.render_list = pg.sprite.RenderUpdates()
         self.agent_group = pg.sprite.Group()
         self.food_group = pg.sprite.Group()
@@ -50,6 +61,9 @@ class Simulation():
         self.rect = pg.Rect((0,0),size)
         self.size = size
 
+        self.app.on_save_event.append(self.on_save)
+        self.app.on_load_event.append(self.on_load)
+
     def update(self, time_delta):
         self.time += time_delta
 
@@ -80,6 +94,18 @@ class Simulation():
         y = spikeyboi.spikey.random.uniform(0, 1) * self.size[1]
 
         food_source.pos = (x,y)
+
+    def on_save(self):
+        with open('sim.pickle', 'wb') as fp:
+            pickle.dump(self.rng_seed, fp)
+            pickle.dump(self.agent.brain, fp)
+
+    def on_load(self):
+        with open('sim.pickle', 'rb') as fp:
+            rng_seed = pickle.load(fp)
+            spikeyboi.spikey.random = np.random.default_rng(rng_seed)
+
+            self.agent.brain = pickle.load(fp)
 
 if __name__ == '__main__':
     sim = Simulation()

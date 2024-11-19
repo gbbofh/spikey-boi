@@ -4,6 +4,7 @@ import pygame as pg
 import pygame_gui as gui
 
 
+import spikeyboi
 import spikeyboi.ui
 import spikeyboi.ui.debug_window
 
@@ -49,4 +50,5 @@ class UIRewardDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
         pg.transform.scale(self.buffer, self.disp_surf.image.size, self.disp_surf.image)
 
-
+    def on_load_completed(self):
+        self.net = self.sim.agent.brain.net

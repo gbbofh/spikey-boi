@@ -56,7 +56,7 @@ class FoodSource():
 
         lifetime = spikeyboi.spikey.random.uniform(1.0, 5.0)
 
-        if len(self.pool) > 0:
+        while len(self.pool) > 0:
             f = self.pool.pop()
 
             f.rect.x = x

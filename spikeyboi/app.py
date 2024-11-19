@@ -1,3 +1,4 @@
+import spikeyboi
 import spikeyboi.ui.menubar
 import spikeyboi.ui.viewport
 import spikeyboi.ui.debug_window
@@ -8,21 +9,30 @@ import spikeyboi.ui.eligibility_debug
 import spikeyboi.ui.fps_debug
 
 
+import pickle
+
+
 import pygame as pg
 import pygame_gui as gui
 
 
 class App():
     def __init__(self, title='spikeyboi', size=(800,600)):
-        pg.init()
+        spikeyboi.app_instance = self
 
-        self.display = pg.display.set_mode(size)
-        pg.display.set_caption(title)
+        self.on_save_event = []
+        self.on_load_event = []
+        self.on_load_completed_event = []
 
         self.run = True
         self.time_accum = 0.0
         self.fixed_delta_time = 0.03
         self.size = size
+
+        pg.init()
+
+        self.display = pg.display.set_mode(size)
+        pg.display.set_caption(title)
 
         self.manager = gui.UIManager(size)
 
@@ -32,6 +42,10 @@ class App():
         }
 
         self.menubar = spikeyboi.ui.menubar.UIMenuBar(pg.Rect((0,0),(size[0],30)), self.manager, menubar_data)
+        # self.menubar.bind_action('Save Brain', self.save_brain)
+        # self.menubar.bind_action('Load Brain', self.load_brain)
+        self.menubar.bind_action('Save Brain', self.on_save)
+        self.menubar.bind_action('Load Brain', self.on_load)
         self.menubar.bind_action('Synapses', lambda: self.toggle_window(self.sd_view))
         self.menubar.bind_action('Deltas', lambda: self.toggle_window(self.dd_view))
         self.menubar.bind_action('Rewards', lambda: self.toggle_window(self.rd_view))
@@ -68,6 +82,34 @@ class App():
         self.rd_view.kernel_enabled = not self.rd_view.kernel_enabled
         self.ed_view.kernel_enabled = not self.ed_view.kernel_enabled
         self.dd_view.kernel_enabled = not self.dd_view.kernel_enabled
+
+    # TODO: Add event for on_save with listener in brain
+    # TODO: Save rng seed
+    # def save_brain(self):
+    #     with open('brain.pickle', 'wb') as fp:
+    #         pickle.dump(self.agent.brain, fp)
+
+    # # TODO: Add event for on_load, with listeners in UI and brain
+    # # TODO: Load rng seed
+    # def load_brain(self):
+    #     with open('brain.pickle', 'rb') as fp:
+    #         brain = pickle.load(fp)
+    #         self.agent.brain = brain
+    #         self.sd_view.net = brain.net
+    #         self.dd_view.net = brain.net
+    #         self.rd_view.net = brain.net
+    #         self.ed_view.net = brain.net
+
+    def on_load(self):
+        for e in self.on_load_event:
+            e()
+
+        for e in self.on_load_completed_event:
+            e()
+
+    def on_save(self):
+        for e in self.on_save_event:
+            e()
 
     def fixed_update(self, fixed_delta):
         pass

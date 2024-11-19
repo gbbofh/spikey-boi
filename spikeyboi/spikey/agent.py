@@ -51,6 +51,8 @@ class Agent(pg.sprite.Sprite):
         sim = spikeyboi.spikey.sim_instance
 
         hits = []
+        input_scale = np.zeros_like(self.brain.inputs)
+
         self.distances[:] = 0
 
         for i,a in enumerate(self.ray_angles):
@@ -66,21 +68,29 @@ class Agent(pg.sprite.Sprite):
                 obj, point, dist = hit
                 self.distances[i] = dist
                 if type(obj) is spikeyboi.spikey.food.Food:
-                    self.brain.rewards[i] += 0.05
+                    # input = 1 / (1 + np.exp(5 * -dist))
+
+                    # self.brain.inputs[i] += input
+                    input_scale[i] = 5
+                    self.brain.rewards[i,:] += 0.05 * fixed_delta
 
                     presyn = self.brain.net.P_pre > 0.2
-                    self.brain.rewards[presyn] += 0.02
+                    self.brain.rewards[presyn] += 0.02 * fixed_delta
 
                     postsyn = self.brain.net.P_post < 0.01
-                    self.brain.rewards[postsyn] -= 0.01
+                    self.brain.rewards[postsyn] -= 0.01 * fixed_delta
                 else:
-                    self.brain.rewards[i] += 0.01
+                    # input = 1 / (1 + np.exp(3 * -dist))
+
+                    # self.brain.inputs[i] += input
+                    input_scale[i] = 3
+                    self.brain.rewards[i,:] += 0.01 * fixed_delta
 
                     presyn = self.brain.net.P_pre > 0.2
-                    self.brain.rewards[presyn] -= 0.02
+                    self.brain.rewards[presyn] -= 0.02 * fixed_delta
 
                     postsyn = self.brain.net.P_post < 0.01
-                    self.brain.rewards[postsyn] += 0.01
+                    self.brain.rewards[postsyn] += 0.01 * fixed_delta
                 # weights = {
                 #     spikeyboi.spikey.wall.Wall: 0.5,
                 #     spikeyboi.spikey.food.Food: 1.0,
@@ -99,7 +109,11 @@ class Agent(pg.sprite.Sprite):
         deltas = self.distances - self.prev_distances
         self.prev_distances = self.distances
 
-        self.brain.inputs[:] = 1 / (1 + np.exp(deltas))
+        self.brain.inputs[:] += 0.5 / (1 + np.exp(input_scale * -deltas))
+        # TODO: reward presynaptic neurons where delta > 0
+        inds = np.where(deltas > 0)
+        for i in np.nditer(inds, ('zerosize_ok',)):
+            self.brain.rewards[:,i] += 0.08 * fixed_delta
         self.brain.update(fixed_delta)
 
         x,y = self.rect.center
@@ -154,10 +168,10 @@ class Agent(pg.sprite.Sprite):
             self.brain.rewards[self.brain.input_first:self.brain.input_last + 1,:] += 0.3 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
             presyn = self.brain.net.P_pre > 0.2
-            self.brain.rewards[presyn] += 0.1
+            self.brain.rewards[presyn] += 0.1 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
-            postsyn = sel.brain.net.P_post < 0.1
-            self.brain.rewards[postsyn] -= 0.05
+            postsyn = self.brain.net.P_post < 0.1
+            self.brain.rewards[postsyn] -= 0.05 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
         elif type(other) == spikeyboi.spikey.wall.Wall:
             ltd = self.brain.output_first if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_last
@@ -172,10 +186,10 @@ class Agent(pg.sprite.Sprite):
             self.brain.rewards[:,ltd] -= 0.2 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
             presyn = self.brain.net.P_pre > 0.1
-            self.brain.rewards[presyn] -= 0.05
+            self.brain.rewards[presyn] -= 0.05 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
             postsyn = self.brain.net.P_post < 0.2
-            self.brain.rewards[postsyn] -= 0.05
+            self.brain.rewards[postsyn] -= 0.05 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
     def debug_draw(self, surface):
 
