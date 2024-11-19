@@ -65,6 +65,22 @@ class Agent(pg.sprite.Sprite):
             if hit:
                 obj, point, dist = hit
                 self.distances[i] = dist
+                if type(obj) is spikeyboi.spikey.food.Food:
+                    self.brain.rewards[i] += 0.05
+
+                    presyn = self.brain.net.P_pre > 0.2
+                    self.brain.rewards[presyn] += 0.02
+
+                    postsyn = self.brain.net.P_post < 0.01
+                    self.brain.rewards[postsyn] -= 0.01
+                else:
+                    self.brain.rewards[i] += 0.01
+
+                    presyn = self.brain.net.P_pre > 0.2
+                    self.brain.rewards[presyn] -= 0.02
+
+                    postsyn = self.brain.net.P_post < 0.01
+                    self.brain.rewards[postsyn] += 0.01
                 # weights = {
                 #     spikeyboi.spikey.wall.Wall: 0.5,
                 #     spikeyboi.spikey.food.Food: 1.0,
@@ -132,21 +148,34 @@ class Agent(pg.sprite.Sprite):
         return angle * np.sign(c)
 
     def on_collision(self, other):
+        print(f'{self} collided with {other}')
         if type(other) == spikeyboi.spikey.food.Food:
             self.brain.rewards[:,self.brain.output_first:self.brain.output_last + 1] += 0.5 * spikeyboi.spikey.sim_instance.fixed_delta_time
             self.brain.rewards[self.brain.input_first:self.brain.input_last + 1,:] += 0.3 * spikeyboi.spikey.sim_instance.fixed_delta_time
+
+            presyn = self.brain.net.P_pre > 0.2
+            self.brain.rewards[presyn] += 0.1
+
+            postsyn = sel.brain.net.P_post < 0.1
+            self.brain.rewards[postsyn] -= 0.05
+
         elif type(other) == spikeyboi.spikey.wall.Wall:
             ltd = self.brain.output_first if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_last
             ltp = int(not ltd)
+
             mask = self.distances > 0
             r = self.brain.rewards[:len(self.distances)]
 
             r[mask, :] += 0.1 * spikeyboi.spikey.sim_instance.fixed_delta_time
-            # self.brain.rewards[self.distances > 0,:] += 0.1 * spikeyboi.spikey.sim_instance.fixed_delta_time
+
             self.brain.rewards[:,ltp] += 0.1 * spikeyboi.spikey.sim_instance.fixed_delta_time
             self.brain.rewards[:,ltd] -= 0.2 * spikeyboi.spikey.sim_instance.fixed_delta_time
-            # self.brain.rewards[:,self.brain.output_first:self.brain.output_last + 1] += 0.5
-            # self.brain.rewards[:,self.brain.input_first:self.brain.input_last + 1] += 0.3
+
+            presyn = self.brain.net.P_pre > 0.1
+            self.brain.rewards[presyn] -= 0.05
+
+            postsyn = self.brain.net.P_post < 0.2
+            self.brain.rewards[postsyn] -= 0.05
 
     def debug_draw(self, surface):
 
