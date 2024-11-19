@@ -12,7 +12,7 @@ import spikeyboi.spikey.wall
 
 class Simulation():
 
-    def __init__(self):
+    def __init__(self, size=(800,600)):
         spikeyboi.spikey.sim_instance = self
         self.render_list = pg.sprite.RenderUpdates()
         self.agent_group = pg.sprite.Group()
@@ -24,7 +24,9 @@ class Simulation():
         agent.x, agent.y = 100, 100
         self.agent = agent
 
-        self.food_source = spikeyboi.spikey.food_source.FoodSource((200,200), 50, 25, -1.0, self.food_group, self.all_entities, self.physics_group, self.render_list)
+        w,h = size
+        center = w // 2,h // 2
+        self.food_source = spikeyboi.spikey.food_source.FoodSource(center, 75, 50, -1.0, self.food_group, self.all_entities, self.physics_group, self.render_list)
         self.food_source.on_lifetime_exceeded_event.append(self.on_food_source_lifetime_exceeded)
 
         wall_thickness = 50
@@ -45,8 +47,8 @@ class Simulation():
         self.time = 0.0
         self.fixed_delta_time = 0.03
         self.background_color = np.zeros(3)
-        self.rect = pg.Rect(0,0,0,0)
-        self.size = (0,0)
+        self.rect = pg.Rect((0,0),size)
+        self.size = size
 
     def update(self, time_delta):
         self.time += time_delta
