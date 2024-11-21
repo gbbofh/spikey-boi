@@ -16,15 +16,16 @@ class UIDebugWindow(gui.elements.UIWindow):
 
     def __init__(self, title, rect, manager):
         rect = pg.Rect(rect)
-        super().__init__(rect, manager, title, visible=False, always_on_top=True)
+        super().__init__(rect, manager, title, visible=False, always_on_top=True, resizable=True)
 
         surf_size = self.get_container().get_size()
         surf_rect = pg.Rect((0,0), surf_size)
         surf_buffer = pg.Surface(surf_size, pg.SRCALPHA)
         self.disp_surf = gui.elements.UIImage(surf_rect, surf_buffer,
                                             manager=manager,
-                                            container=self,
-                                            parent_element=self)
+                                            container=self.get_container(),
+                                            parent_element=self,
+                                            anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'})
 
         self.sim = spikeyboi.spikey.sim_instance
         self.kernel = None
@@ -36,6 +37,14 @@ class UIDebugWindow(gui.elements.UIWindow):
 
     def on_close_window_button_pressed(self):
         self.hide()
+
+    def process_event(self, e):
+        if e.type == gui.UI_WINDOW_RESIZED:
+            if e.ui_element == self:
+                nw, nh = self.get_abs_rect().size
+                ns = max(nw, nh)
+                self.set_dimensions((ns, ns))
+        return super().process_event(e)
 
     def on_load_completed(self):
         pass

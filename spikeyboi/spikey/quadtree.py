@@ -166,13 +166,15 @@ class QuadTree():
         return hits
 
     def debug_draw(self, surface):
-        if self.ne:
-            self.ne.debug_draw(surface)
-        if self.se:
-            self.se.debug_draw(surface)
-        if self.nw:
-            self.nw.debug_draw(surface)
-        if self.sw:
-            self.sw.debug_draw(surface)
+        #if self.ne:
+        #    self.ne.debug_draw(surface)
+        #if self.se:
+        #    self.se.debug_draw(surface)
+        #if self.nw:
+        #    self.nw.debug_draw(surface)
+        #if self.sw:
+        #    self.sw.debug_draw(surface)
 
-        pg.draw.rect(surface, self.color, self.bounding_rect, 2)
+        #pg.draw.rect(surface, self.color, self.bounding_rect, 2)
+        pass
+

@@ -22,15 +22,16 @@ class UIEligibilityDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
         self.kernel_enabled = True
         self.data = np.zeros_like(self.net.E_syn)
-        self.alpha = 0.5
+        self.alpha = 0.95
 
     def update(self, delta_time):
         super().update(delta_time)
 
-        E_syn = self.net.E_syn
+        E_syn = self.net.E_syn.copy()
+        E_min = np.min(E_syn)
+        E_syn = E_syn + np.abs(E_min)
         E_max = np.max(E_syn)
-
-        E_syn = E_syn / E_max if E_max > 0 else E_syn
+        E_syn = E_syn / E_max if E_max != 0 else E_syn
 
         self.data[:] = self.alpha * E_syn + (1 - self.alpha) * self.data
         values = self.data

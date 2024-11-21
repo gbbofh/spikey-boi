@@ -6,6 +6,7 @@ import spikeyboi.ui.delta_debug
 import spikeyboi.ui.synapse_debug
 import spikeyboi.ui.reward_debug
 import spikeyboi.ui.eligibility_debug
+import spikeyboi.ui.spike_debug
 import spikeyboi.ui.fps_debug
 
 
@@ -37,8 +38,8 @@ class App():
         self.manager = gui.UIManager(size)
 
         menubar_data = {
-            'File': ['Save Brain', 'Load Brain'],
-            'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Toggle FPS', 'Toggle Blur'],
+            'File': ['New Brain', 'Save Brain', 'Load Brain'],
+            'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Spikes', 'Toggle FPS', 'Toggle Blur'],
         }
 
         self.menubar = spikeyboi.ui.menubar.UIMenuBar(pg.Rect((0,0),(size[0],30)), self.manager, menubar_data)
@@ -46,18 +47,21 @@ class App():
         # self.menubar.bind_action('Load Brain', self.load_brain)
         self.menubar.bind_action('Save Brain', self.on_save)
         self.menubar.bind_action('Load Brain', self.on_load)
+        self.menubar.bind_action('New Brain', self.new_brain)
         self.menubar.bind_action('Synapses', lambda: self.toggle_window(self.sd_view))
         self.menubar.bind_action('Deltas', lambda: self.toggle_window(self.dd_view))
         self.menubar.bind_action('Rewards', lambda: self.toggle_window(self.rd_view))
         self.menubar.bind_action('Eligibility', lambda: self.toggle_window(self.ed_view))
-        self.menubar.bind_action('FPS', lambda: self.toggle_window(self.fps_debug))
+        self.menubar.bind_action('Spikes', lambda: self.toggle_window(self.spike_view))
+        self.menubar.bind_action('Toggle FPS', lambda: self.toggle_window(self.fps_debug))
         self.menubar.bind_action('Toggle Blur', self.toggle_kernels)
 
         self.viewport = spikeyboi.ui.viewport.UIViewport(pg.Rect((0,0),(size[0], size[1] - 30)), self.manager, anchors={'top_target': self.menubar})
-        self.dd_view = spikeyboi.ui.delta_debug.UIDeltaDebugger('Synaptic Deltas', (100,100,300,300), self.manager)
-        self.sd_view = spikeyboi.ui.synapse_debug.UISynapseDebugger('Synaptic Weights', (100,100,300,300), self.manager)
-        self.rd_view = spikeyboi.ui.reward_debug.UIRewardDebugger('Synaptic Rewards', (100,100,300,300), self.manager)
-        self.ed_view = spikeyboi.ui.eligibility_debug.UIEligibilityDebugger('Reward Eligibility', (100,100,300,300), self.manager)
+        self.dd_view = spikeyboi.ui.delta_debug.UIDeltaDebugger('Synaptic Deltas', (100,100,200,200), self.manager)
+        self.sd_view = spikeyboi.ui.synapse_debug.UISynapseDebugger('Synaptic Weights', (100,100,200,200), self.manager)
+        self.rd_view = spikeyboi.ui.reward_debug.UIRewardDebugger('Synaptic Rewards', (100,100,200,200), self.manager)
+        self.ed_view = spikeyboi.ui.eligibility_debug.UIEligibilityDebugger('Reward Eligibility', (100,100,200,200), self.manager)
+        self.spike_view = spikeyboi.ui.spike_debug.UISpikeDebugger('Spikes', (100,100,200,200), self.manager)
         self.fps_debug = spikeyboi.ui.fps_debug.UIFPSDebugger((-100,5), self.manager)
 
         self.buffer = pg.Surface(self.display.size, pg.SRCALPHA)
@@ -99,6 +103,9 @@ class App():
     #         self.dd_view.net = brain.net
     #         self.rd_view.net = brain.net
     #         self.ed_view.net = brain.net
+
+    def new_brain(self):
+        spikeyboi.spikey.sim_instance.agent.brain.reset()
 
     def on_load(self):
         for e in self.on_load_event:

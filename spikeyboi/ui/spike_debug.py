@@ -8,13 +8,12 @@ import spikeyboi.ui
 import spikeyboi.ui.debug_window
 
 
-class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
+class UISpikeDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.net = self.sim.agent.brain.net
 
-        # self.buffer = pg.Surface((self.net.num_neurons, self.net.num_neurons), pg.SRCALPHA)
         self.buffer = pg.Surface((self.net.num_neurons, self.net.num_neurons), pg.SRCALPHA)
         self.kernel = np.array([
             [ 0.25, 0.25, ],
@@ -22,28 +21,34 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         ])
 
         self.kernel_enabled = True
-        self.data = np.zeros_like(self.net.dw)
-        self.alpha = 0.1
+        self.data = np.zeros((self.net.num_neurons, self.net.num_neurons), dtype=np.float64)
+        self.alpha = 0.95
 
     def update(self, delta_time):
         super().update(delta_time)
 
-        dw = self.net.dw.copy().T
-        dw = np.abs(dw)
-        dw_min = np.min(dw)
-        dw = dw + dw_min
-        dw_max = np.max(dw)
-        dw = dw / dw_max if dw_max != 0 else dw
+        # w = self.net.w * self.net.neuron_type[:, np.newaxis]
+        # w_min = np.abs(np.min(w))
+        # w = w + w_min
+        # w_max = np.max(w)
+        # w = w / w_max if w_max != 0 else w
+        # w = w.T
 
-        self.data[:] = self.alpha * dw + (1 - self.alpha) * self.data
+        s = self.net.spikes
+        s = np.outer(s[:, np.newaxis], s[np.newaxis, :]).astype(np.int32) * np.eye(self.net.num_neurons)
+
+        # values = w
+        self.data[:] = self.alpha * s + (1 - self.alpha) * self.data
         values = self.data
         if not (self.kernel is None) and self.kernel_enabled:
-            values = sp.ndimage.convolve(self.data, self.kernel)
+            values = sp.ndimage.convolve(s, self.kernel)
 
-        rgba = spikeyboi.ui.colormaps['inferno'](values)
+        rgba = spikeyboi.ui.colormaps['zebra'](values)
 
-        self.buffer.fill((0,0,0,0))
+        self.buffer.fill((0,0,0,255))
         pg.surfarray.blit_array(self.buffer, rgba[:,:,:-1])
+
+        # rgba[mask,:] = 0
 
         alpha = pg.surfarray.pixels_alpha(self.buffer)
         alpha[:] = rgba[:,:,-1]

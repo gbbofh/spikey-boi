@@ -79,18 +79,20 @@ class Agent(pg.sprite.Sprite):
 
                     postsyn = self.brain.net.P_post < 0.01
                     self.brain.rewards[postsyn] -= 0.01 * fixed_delta
-                else:
+                elif type(obj) is spikeyboi.spikey.wall.Wall:
                     # input = 1 / (1 + np.exp(3 * -dist))
 
                     # self.brain.inputs[i] += input
                     input_scale[i] = 3
-                    self.brain.rewards[i,:] += 0.01 * fixed_delta
+                    self.brain.rewards[i,:] += 0.02 * fixed_delta
 
                     presyn = self.brain.net.P_pre > 0.2
-                    self.brain.rewards[presyn] -= 0.02 * fixed_delta
+                    presyn = presyn[i]
+                    self.brain.rewards[presyn,i] -= 0.02 * fixed_delta
 
                     postsyn = self.brain.net.P_post < 0.01
-                    self.brain.rewards[postsyn] += 0.01 * fixed_delta
+                    postsyn = postsyn[i]
+                    self.brain.rewards[postsyn,i] += 0.02 * fixed_delta
                 # weights = {
                 #     spikeyboi.spikey.wall.Wall: 0.5,
                 #     spikeyboi.spikey.food.Food: 1.0,
@@ -109,7 +111,7 @@ class Agent(pg.sprite.Sprite):
         deltas = self.distances - self.prev_distances
         self.prev_distances = self.distances
 
-        self.brain.inputs[:] += 0.5 / (1 + np.exp(input_scale * -deltas))
+        self.brain.inputs[:] += 0.5 / (1 + np.exp(input_scale * -deltas)) * fixed_delta
         # TODO: reward presynaptic neurons where delta > 0
         inds = np.where(deltas > 0)
         for i in np.nditer(inds, ('zerosize_ok',)):
@@ -162,7 +164,7 @@ class Agent(pg.sprite.Sprite):
         return angle * np.sign(c)
 
     def on_collision(self, other):
-        print(f'{self} collided with {other}')
+        # print(f'{self} collided with {other}')
         if type(other) == spikeyboi.spikey.food.Food:
             self.brain.rewards[:,self.brain.output_first:self.brain.output_last + 1] += 0.5 * spikeyboi.spikey.sim_instance.fixed_delta_time
             self.brain.rewards[self.brain.input_first:self.brain.input_last + 1,:] += 0.3 * spikeyboi.spikey.sim_instance.fixed_delta_time
@@ -175,23 +177,25 @@ class Agent(pg.sprite.Sprite):
 
         elif type(other) == spikeyboi.spikey.wall.Wall:
             ltd = self.brain.output_first if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_last
-            ltp = int(not ltd)
+            ltp = self.brain.output_last if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_first
 
             mask = self.distances > 0
             r = self.brain.rewards[:len(self.distances)]
 
             r[mask, :] += 0.1 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
-            self.brain.rewards[:,ltp] += 0.1 * spikeyboi.spikey.sim_instance.fixed_delta_time
-            self.brain.rewards[:,ltd] -= 0.2 * spikeyboi.spikey.sim_instance.fixed_delta_time
+            self.brain.rewards[:self.brain.net.num_exc,ltp] += 0.1 * spikeyboi.spikey.sim_instance.fixed_delta_time
+            self.brain.rewards[self.brain.net.num_exc:,ltp] -= 0.2 * spikeyboi.spikey.sim_instance.fixed_delta_time
+            self.brain.rewards[:self.brain.net.num_exc,ltd] -= 0.2 * spikeyboi.spikey.sim_instance.fixed_delta_time
+            self.brain.rewards[self.brain.net.num_exc:,ltd] += 0.1 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
             presyn = self.brain.net.P_pre > 0.1
-            self.brain.rewards[presyn] -= 0.05 * spikeyboi.spikey.sim_instance.fixed_delta_time
+            self.brain.rewards[presyn] -= 0.02 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
             postsyn = self.brain.net.P_post < 0.2
-            self.brain.rewards[postsyn] -= 0.05 * spikeyboi.spikey.sim_instance.fixed_delta_time
+            self.brain.rewards[postsyn] -= 0.02 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
     def debug_draw(self, surface):
-
-        pg.draw.line(surface, (255,255,255), self.rect.center, self.rect.center + self.get_forward() * 300)
+        # pg.draw.line(surface, (255,255,255), self.rect.center, self.rect.center + self.get_forward() * 300)
+        pass
 

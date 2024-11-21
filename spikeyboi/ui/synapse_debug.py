@@ -21,6 +21,8 @@ class UISynapseDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         ])
 
         self.kernel_enabled = True
+        self.data = np.zeros_like(self.net.w, dtype=np.float64)
+        self.alpha = 0.95
 
     def update(self, delta_time):
         super().update(delta_time)
@@ -35,19 +37,22 @@ class UISynapseDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         w = w / w_max if w_max != 0 else w
         w = w.T
 
-        values = w
+        # values = w
+        self.data[:] = self.alpha * w + (1 - self.alpha) * self.data
+        values = self.data
         if not (self.kernel is None) and self.kernel_enabled:
             values = sp.ndimage.convolve(w, self.kernel)
 
         rgba = spikeyboi.ui.colormaps['rdgr'](values)
 
+        mask = self.data != 0
+        mask = ~mask
+        rgba[mask,:] = 0
+
         self.buffer.fill((0,0,0,0))
         pg.surfarray.blit_array(self.buffer, rgba[:,:,:-1])
 
-        mask = self.net.w != 0
-        mask = ~mask
-
-        rgba[mask,:] = 0
+        # rgba[mask,:] = 0
 
         alpha = pg.surfarray.pixels_alpha(self.buffer)
         alpha[:] = rgba[:,:,-1]

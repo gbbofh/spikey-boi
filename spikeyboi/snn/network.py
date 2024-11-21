@@ -17,7 +17,7 @@ class Network():
         'F_t': 15.0,
 
         # Synapse parameters
-        'P_syn': 0.4,
+        'P_syn': 0.3,
         'P_syn_gen': 0.00005,
         'tau_s': 5.0,
         'w_I': 0.05, # Orig - 0.05
@@ -53,7 +53,7 @@ class Network():
         'I_ext_mean': 1.35,
         'I_ext_std': 0.5, # orig 0.5
         'I_ext_enable': True,
-        'I_ext_adaptive': True,
+        'I_ext_adaptive': False,
         'I_ext_adaptive_scale': 0.06,
 
         # Spike correlation parameters
