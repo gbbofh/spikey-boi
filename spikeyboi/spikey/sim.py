@@ -32,12 +32,18 @@ class Simulation():
         self.all_entities = pg.sprite.Group()
 
         agent = spikeyboi.spikey.agent.Agent(self.agent_group, self.physics_group, self.all_entities, self.render_list)
-        agent.x, agent.y = 100, 100
+        agent.x, agent.y = 100, 200
+        agent.rect.x, agent.rect.y = agent.x, agent.y
         self.agent = agent
+
+        # agent = spikeyboi.spikey.agent.Agent(self.agent_group, self.physics_group, self.all_entities, self.render_list)
+        # agent.x, agent.y = 200, 200
+        # agent.rect.x, agent.rect.y = agent.x, agent.y
+        # self.agent2 = agent
 
         w,h = size
         center = w // 2,h // 2
-        self.food_source = spikeyboi.spikey.food_source.FoodSource(center, 75, 50, -1.0, self.food_group, self.all_entities, self.physics_group, self.render_list)
+        self.food_source = spikeyboi.spikey.food_source.FoodSource(center, 200, 50, -1.0, self.food_group, self.all_entities, self.physics_group, self.render_list)
         self.food_source.on_lifetime_exceeded_event.append(self.on_food_source_lifetime_exceeded)
 
         wall_thickness = 50
@@ -85,9 +91,10 @@ class Simulation():
         self.rect = surface.get_rect()
         self.size = self.rect.size
         self.render_list.draw(surface)
-        self.quadtree.debug_draw(surface)
 
-        self.agent.debug_draw(surface)
+        # self.physics.debug_draw(surface)
+        # self.quadtree.debug_draw(surface)
+        # self.agent.debug_draw(surface)
 
     def on_food_source_lifetime_exceeded(self, food_source):
         x = spikeyboi.spikey.random.uniform(0, 1) * self.size[0]

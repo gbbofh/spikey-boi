@@ -147,17 +147,28 @@ class QuadTree():
     def hit(self, rect, exclude=None):
         # Find the hits at the current level.
         rect = pg.Rect(rect)
-        hits = set([self.items[n] for n in rect.collidelistall(self.items)])
-        hits |= set([self.spanning_items[n] for n in rect.collidelistall(self.spanning_items)])
+        # hits = set([self.items[n] for n in rect.collidelistall(self.items)])
+        # hits |= set([self.spanning_items[n] for n in rect.collidelistall(self.spanning_items)])
+
+        hits = set()
+
+        # Add items that intersect with the given rect
+        # hits.update(
+        #     item for item in (self.items + self.spanning_items) 
+        #     if item.rect.colliderect(rect)
+        # )
+
+        hits.update(item for item in self.items if item.rect.colliderect(rect))
+        hits.update(item for item in self.spanning_items if item.rect.colliderect(rect))
         
         # Recursively check the lower quadrants.
-        if self.nw and rect.left < self.cx and rect.top < self.cy:
+        if self.nw and rect.left < self.cx and rect.top <= self.cy:
             hits |= self.nw.hit(rect)
-        if self.sw and rect.left < self.cx and rect.bottom < self.cy:
+        if self.sw and rect.left < self.cx and rect.bottom > self.cy:
             hits |= self.sw.hit(rect)
-        if self.ne and rect.right >= self.cx and rect.top >= self.cy:
+        if self.ne and rect.right > self.cx and rect.top <= self.cy:
             hits |= self.ne.hit(rect)
-        if self.se and rect.right >= self.cx and rect.bottom >= self.cy:
+        if self.se and rect.right > self.cx and rect.bottom > self.cy:
             hits |= self.se.hit(rect)
 
         if exclude:
@@ -166,15 +177,15 @@ class QuadTree():
         return hits
 
     def debug_draw(self, surface):
-        #if self.ne:
-        #    self.ne.debug_draw(surface)
-        #if self.se:
-        #    self.se.debug_draw(surface)
-        #if self.nw:
-        #    self.nw.debug_draw(surface)
-        #if self.sw:
-        #    self.sw.debug_draw(surface)
+        if self.ne:
+            self.ne.debug_draw(surface)
+        if self.se:
+            self.se.debug_draw(surface)
+        if self.nw:
+            self.nw.debug_draw(surface)
+        if self.sw:
+            self.sw.debug_draw(surface)
 
-        #pg.draw.rect(surface, self.color, self.bounding_rect, 2)
+        pg.draw.rect(surface, self.color, self.bounding_rect, 2)
         pass
 

@@ -11,6 +11,7 @@ class Physics():
     def __init__(self, physics_group: pg.sprite.Group):
         self.quadtree = spikeyboi.spikey.sim_instance.quadtree
         self.objects = physics_group
+        self._ray_objects = []
 
     def fixed_update(self, fixed_delta):
         """
@@ -21,7 +22,7 @@ class Physics():
 
         # Resolve collisions iteratively
         unresolved = True
-        max_iterations = 10
+        max_iterations = 20
         iterations = 0
 
         while unresolved and iterations < max_iterations:
@@ -29,18 +30,27 @@ class Physics():
             iterations += 1
 
             for obj in self.objects:
-                if not hasattr(obj, "rect") or getattr(obj, "is_static", False):
+                # if not hasattr(obj, "rect") or getattr(obj, "is_static", False):
+                if not hasattr(obj, 'rect'):
+                    # print(hasattr(obj, 'rect'), getattr(obj, 'is_static', False))
                     continue  # Skip static objects and invalid ones
 
                 # Find potential collisions
-                candidates = self.quadtree.hit(obj.rect)
+                candidates = self.quadtree.hit(obj.rect, exclude=obj)
+
+                # if type(obj) == spikeyboi.spikey.food.Food:
+                #     print(f'{candidates=}')
 
                 for other in candidates:
-                    if obj == other or not hasattr(other, "rect"):
-                        continue  # Skip self and invalid objects
+                    # # if obj == other or not hasattr(other, 'is_static', False):
+                    # if obj == other:
+                    #     continue  # Skip self and invalid objects
 
                     if obj.rect.colliderect(other.rect):
                         unresolved = True  # There are still collisions to resolve
+
+                        # Resolve collision
+                        self.resolve_collision(obj, other)
 
                         # Notify objects of the collision
                         if hasattr(obj, "on_collision"):
@@ -48,40 +58,70 @@ class Physics():
                         if hasattr(other, "on_collision"):
                             other.on_collision(obj)
 
-                        # Resolve collision
-                        self.resolve_collision(obj, other)
+    def collision_normal(self, left, right):
+        """
+        Calculate the approximate collision normal from overlapping area
+        
+        Args:
+            left: A Sprite object with rect, mask, x, and y properties
+            right: A Sprite object with rect, mask, x, and y properties
+            
+        Returns:
+            A tuple of (dx, dy) or None if no collision normal can be calculated
+        """
+        xoff = right.rect[0] - left.rect[0]
+        yoff = right.rect[1] - left.rect[1]
+
+        offset = (xoff, yoff)
+
+        left_mask = left.mask
+        right_mask = right.mask
+
+        does_overlap = left_mask.overlap(right_mask, offset)
+        overlap = left_mask.overlap_area(right_mask, offset)
+
+        if overlap == 0:
+            return
+
+        x_plus = left_mask.overlap_area(right_mask, (xoff + 1, yoff))
+        x_minus = left_mask.overlap_area(right_mask, (xoff - 1, yoff))
+
+        y_plus = left_mask.overlap_area(right_mask, (xoff, yoff + 1))
+        y_minus = left_mask.overlap_area(right_mask, (xoff, yoff - 1))
+
+        dx = x_plus - x_minus
+        dy = y_plus - y_minus
+
+        if dx == 0 and dy == 0:
+            return
+
+        magnitude = np.linalg.norm((dx, dy))
+        step = min(overlap, 5)
+
+        dx = int(dx / magnitude * step)
+        dy = int(dy / magnitude * step)
+
+        return (dx, dy)
+
 
     def resolve_collision(self, obj, other):
-        """
-        Resolve a collision by repositioning objects to prevent overlap.
-        """
-        is_static = getattr(obj, 'is_static', False)
-
-        # Calculate overlap
-        overlap_x = min(obj.rect.right - other.rect.left, other.rect.right - obj.rect.left)
-        overlap_y = min(obj.rect.bottom - other.rect.top, other.rect.bottom - obj.rect.top)
-
-        # Resolve smaller overlap
-        if abs(overlap_x) < abs(overlap_y):
-            # Resolve horizontally
-            if obj.rect.centerx < other.rect.centerx:
-                obj.rect.right -= overlap_x if not is_static else 0
-                if hasattr(obj, 'x'):
-                    obj.x -= overlap_x if not is_static else 0
-            else:
-                obj.rect.left += overlap_x if not is_static else 0
-                if hasattr(obj, 'x'):
-                    obj.x += overlap_x if not is_static else 0
-        else:
-            # Resolve vertically
-            if obj.rect.centery < other.rect.centery:
-                obj.rect.bottom -= overlap_y if not is_static else 0
-                if hasattr(obj, 'y'):
-                    obj.y -= overlap_y if not is_static else 0
-            else:
-                obj.rect.top += overlap_y if not is_static else 0
-                if hasattr(obj, 'y'):
-                    obj.y += overlap_y if not is_static else 0
+        if pg.sprite.spritecollide(obj, (other,), False, pg.sprite.collide_mask):
+            norm = self.collision_normal(obj, other)
+            if norm is None:
+                return
+            dx, dy = norm
+            if not getattr(obj, 'is_static', False):
+                name = obj.__class__.__name__
+                rect = obj.rect.copy()
+                obj.rect.x += dx
+                obj.rect.y += dy
+                obj.x, obj.y = obj.rect.x, obj.rect.y
+            if not getattr(other, 'is_static', False):
+                name = other.__class__.__name__
+                rect = other.rect.copy()
+                other.rect.x -= dx
+                other.rect.y -= dy
+                other.x, other.y = other.rect.x, other.rect.y
 
     def cast_ray(self, origin, direction, max_distance, exclude=None):
         """
@@ -102,6 +142,8 @@ class Physics():
         direction = direction / np.linalg.norm(direction)  # Ensure normalized
         
         end = origin + direction * max_distance
+
+        self._ray_objects.append((origin, end))
         
         # Create bounding rectangle for broad phase
         min_x = min(origin[0], end[0])
@@ -134,7 +176,7 @@ class Physics():
             # Draw the line in object space
             pg.draw.line(ray_surface, (255, 255, 255, 255), local_origin, local_end)
             ray_mask = pg.mask.from_surface(ray_surface)
-            pg.image.save(ray_mask.to_surface(), "ray_mask_debug.png")
+            # pg.image.save(ray_mask.to_surface(), "ray_mask_debug.png")
             
             # Check for collision with object's mask
             overlap = obj.mask.overlap_mask(ray_mask, (0, 0))
@@ -209,4 +251,14 @@ class Physics():
             else:
                 end = (x, y)
                 outcode2 = get_outcode(x, y)
+
+    def debug_draw(self, surf):
+        color = (250,100,100)
+        for obj in self.objects:
+            pg.draw.rect(surf, color, obj.rect, 1)
+
+        for obj in self._ray_objects:
+            pg.draw.line(surf, (100,100,250), obj[0], obj[1])
+
+        self._ray_objects.clear()
 

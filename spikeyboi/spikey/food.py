@@ -16,13 +16,15 @@ class Food(pg.sprite.Sprite):
 
         self.color[1] = spikeyboi.spikey.random.integers(120, 200)
 
-        pg.draw.circle(self.image,self.color,self.rect.center,7.5)
+        pg.draw.circle(self.image,self.color,self.rect.center,7)
         self.mask = pg.mask.from_surface(self.image)
 
         self.lifetime = 0.0
         self.max_life = max_life
         self.on_collision_event = []
         self.on_lifetime_exceeded_event = []
+
+        self.is_static = False
 
     def update(self, delta_time):
         self.lifetime += delta_time

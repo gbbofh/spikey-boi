@@ -57,16 +57,23 @@ class Agent(pg.sprite.Sprite):
 
         for i,a in enumerate(self.ray_angles):
             angle_plus = self.angle + a
-            dir_plus = np.array((np.cos(angle_plus), np.sin(angle_plus)))
+            dir_plus = np.array((np.cos(angle_plus), -np.sin(angle_plus)))
 
             center = self.rect.center
 
-            hit = sim.physics.cast_ray(center, dir_plus, 200, exclude={self})
+            hit = sim.physics.cast_ray(center, dir_plus, 500, exclude={self})
             hits.append(hit)
 
             if hit:
                 obj, point, dist = hit
-                self.distances[i] = dist
+                max_dist = np.linalg.norm(spikeyboi.spikey.sim_instance.size)
+                # self.distances[i] = dist
+                self.distances[i] = dist / max_dist
+                if type(obj) is spikeyboi.spikey.food.Food:
+                    # input = 1 / (1 + np.exp(5 * -dist))
+
+                    # self.brain.inputs[i] += input
+                    input_scale[i] = 5
                 if type(obj) is spikeyboi.spikey.food.Food:
                     # input = 1 / (1 + np.exp(5 * -dist))
 
@@ -93,32 +100,24 @@ class Agent(pg.sprite.Sprite):
                     postsyn = self.brain.net.P_post < 0.01
                     postsyn = postsyn[i]
                     self.brain.rewards[postsyn,i] += 0.02 * fixed_delta
-                # weights = {
-                #     spikeyboi.spikey.wall.Wall: 0.5,
-                #     spikeyboi.spikey.food.Food: 1.0,
-                # }
-                # rewards = {
-                #     spikeyboi.spikey.wall.Wall: 0.2,
-                #     spikeyboi.spikey.food.Food: 0.7,
-                # }
-                # r = rewards[type(obj)]
-                # w = weights[type(obj)]
-                # input = w / (1 + np.exp(-dist))
-                # self.brain.inputs[i] = input
-            else:
-                self.brain.inputs[i] *= np.exp(-1 / 20)
+            # else:
+            #     self.brain.inputs[i] *= np.exp(-1 / 20)
 
         deltas = self.distances - self.prev_distances
         self.prev_distances = self.distances
 
-        self.brain.inputs[:] += 0.5 / (1 + np.exp(input_scale * -deltas)) * fixed_delta
-        # TODO: reward presynaptic neurons where delta > 0
+        # self.brain.inputs[:] += 0.5 / (1 + np.exp(input_scale * -deltas)) * fixed_delta
+        # S = lambda x,s: 0.5 / (1 + np.exp(-s * (x - 0.8)))
+        S = lambda x,s: 0.5 / (1 + np.exp(s * (x - 0.8)))
+        # self.brain.inputs[:] = S(deltas, input_scale)
+        self.brain.inputs[:] = S(self.distances, input_scale)
+        self.brain.inputs[:] *= np.exp(-1/20)
+
         inds = np.where(deltas > 0)
         for i in np.nditer(inds, ('zerosize_ok',)):
             self.brain.rewards[:,i] += 0.08 * fixed_delta
         self.brain.update(fixed_delta)
 
-        x,y = self.rect.center
         self.angle += 0.2 * self.brain.outputs[0] * fixed_delta
         self.angle -= 0.2 * self.brain.outputs[1] * fixed_delta
 
@@ -166,6 +165,7 @@ class Agent(pg.sprite.Sprite):
     def on_collision(self, other):
         # print(f'{self} collided with {other}')
         if type(other) == spikeyboi.spikey.food.Food:
+            # print('omnomnomnom')
             self.brain.rewards[:,self.brain.output_first:self.brain.output_last + 1] += 0.5 * spikeyboi.spikey.sim_instance.fixed_delta_time
             self.brain.rewards[self.brain.input_first:self.brain.input_last + 1,:] += 0.3 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
@@ -176,6 +176,7 @@ class Agent(pg.sprite.Sprite):
             self.brain.rewards[postsyn] -= 0.05 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
         elif type(other) == spikeyboi.spikey.wall.Wall:
+            # print('AAAaaaAAAaa')
             ltd = self.brain.output_first if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_last
             ltp = self.brain.output_last if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_first
 
