@@ -24,8 +24,8 @@ class UISpikeDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         self.data = np.zeros((self.net.num_neurons, self.net.num_neurons), dtype=np.float64)
         self.alpha = 0.95
 
-    def update(self, delta_time):
-        super().update(delta_time)
+    def on_update(self, delta_time):
+        # super().update(delta_time)
 
         # w = self.net.w * self.net.neuron_type[:, np.newaxis]
         # w_min = np.abs(np.min(w))

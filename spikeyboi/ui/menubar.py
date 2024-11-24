@@ -1,30 +1,44 @@
 import pygame
 import pygame_gui
 
+
+import locale
+
+
 class UIMenuBar(pygame_gui.elements.UIPanel):
     def __init__(self, relative_rect, manager, menu_data):
         super().__init__(relative_rect, manager=manager)
+
+        locale.setlocale(locale.LC_ALL, '')
+
+        # toolbar buttons - not associated with a panel, just an action
+        self.toolbar_buttons = []
 
         # Dictionary to hold menu buttons and their dropdown panels
         self.menu_buttons = {}
         self.dropdown_panels = {}
         self.action_callbacks = {}
 
+        self.menu_count = len(menu_data.keys())
+        self.menu_width = 0
+        self.button_width = 90
+
         # Create menu buttons and dropdowns based on menu_data
         button_x = 20
         for menu_name, options in menu_data.items():
             # Create the main menu button
             button = pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect((button_x, 0), (80, relative_rect.height)),
+                relative_rect=pygame.Rect((button_x, 0), (self.button_width - 10, relative_rect.height)),
                 text=menu_name,
                 manager=manager,
-                container=self
+                container=self,
+                object_id=pygame_gui.core.ObjectID(class_id='@menu_button')
             )
             self.menu_buttons[menu_name] = button
 
             # Create a hidden dropdown panel for the menu
             dropdown_panel = pygame_gui.elements.UIPanel(
-                relative_rect=pygame.Rect((button_x, relative_rect.height), (120, 35 * len(options))),
+                relative_rect=pygame.Rect((button_x, relative_rect.height), (120, 30 * len(options) + 5)),
                 manager=manager,
                 visible=False,
                 starting_height=10
@@ -38,19 +52,36 @@ class UIMenuBar(pygame_gui.elements.UIPanel):
                     text=option,
                     manager=manager,
                     container=dropdown_panel,
-                    anchors={'centerx': 'centerx'}
+                    anchors={'centerx': 'centerx'},
+                    object_id=pygame_gui.core.ObjectID(class_id='@menu_button')
                 )
 
                 # Store the action associated with the option
                 option_button.action = option
 
-            button_x += 90  # Adjust for the next button
+            button_x += self.button_width  # Adjust for the next button
+            self.menu_width = button_x
 
         # Track the open state of the dropdowns
         self.open_dropdown = None
 
     def bind_action(self, action, callback):
         self.action_callbacks[action] = callback
+
+    def add_toolbar_button(self, id, callback=None):
+        button_x = self.menu_width + 20
+        button_x += 50 * len(self.toolbar_buttons) + 10
+        button = pygame_gui.elements.UIButton(
+            relative_rect=pygame.Rect((button_x, 0), (50, self.relative_rect.height - 5)),
+            text='',
+            object_id=id,
+            manager=self.ui_manager,
+            container=self)
+
+        button.bind(pygame_gui.UI_BUTTON_PRESSED, callback)
+        self.toolbar_buttons.append(button)
+
+        return button
 
     def process_event(self, event):
         # Handle button presses for menu options

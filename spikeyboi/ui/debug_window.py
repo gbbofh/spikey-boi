@@ -15,11 +15,12 @@ import spikeyboi.snn.network
 class UIDebugWindow(gui.elements.UIWindow):
 
     def __init__(self, title, rect, manager):
+        # print(title, rect, manager)
         rect = pg.Rect(rect)
-        super().__init__(rect, manager, title, visible=False, always_on_top=True, resizable=True)
+        super().__init__(rect, manager, title, visible=False, always_on_top=False, resizable=True)
 
         surf_size = self.get_container().get_size()
-        surf_rect = pg.Rect((0,0), surf_size)
+        surf_rect = pg.Rect((10,10), (surf_size[0] - 20, surf_size[1] - 20))
         surf_buffer = pg.Surface(surf_size, pg.SRCALPHA)
         self.disp_surf = gui.elements.UIImage(surf_rect, surf_buffer,
                                             manager=manager,
@@ -34,6 +35,12 @@ class UIDebugWindow(gui.elements.UIWindow):
 
     def update(self, delta_time):
         super().update(delta_time)
+
+        if self.visible:
+            self.on_update(delta_time)
+
+    def on_update(self, delta_time):
+        pass
 
     def on_close_window_button_pressed(self):
         self.hide()

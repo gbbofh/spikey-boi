@@ -24,8 +24,8 @@ class UISynapseDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         self.data = np.zeros_like(self.net.w, dtype=np.float64)
         self.alpha = 0.95
 
-    def update(self, delta_time):
-        super().update(delta_time)
+    def on_update(self, delta_time):
+        # super().update(delta_time)
 
         # w = (self.net.w * self.net.neuron_type[:, np.newaxis] + 1) / 2
         # w = w.T

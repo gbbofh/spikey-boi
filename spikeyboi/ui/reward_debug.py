@@ -23,8 +23,8 @@ class UIRewardDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
         self.kernel_enabled = True
 
-    def update(self, delta_time):
-        super().update(delta_time)
+    def on_update(self, delta_time):
+        # super().update(delta_time)
 
         r = self.net.reward.copy().T
         r_min = self.net.params.r_min

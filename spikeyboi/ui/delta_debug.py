@@ -14,7 +14,6 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         super().__init__(*args, **kwargs)
         self.net = self.sim.agent.brain.net
 
-        # self.buffer = pg.Surface((self.net.num_neurons, self.net.num_neurons), pg.SRCALPHA)
         self.buffer = pg.Surface((self.net.num_neurons, self.net.num_neurons), pg.SRCALPHA)
         self.kernel = np.array([
             [ 0.25, 0.25, ],
@@ -25,8 +24,8 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         self.data = np.zeros_like(self.net.dw)
         self.alpha = 0.1
 
-    def update(self, delta_time):
-        super().update(delta_time)
+    def on_update(self, delta_time):
+        # super().update(delta_time)
 
         dw = self.net.dw.copy().T
         dw = np.abs(dw)
@@ -40,7 +39,7 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         if not (self.kernel is None) and self.kernel_enabled:
             values = sp.ndimage.convolve(self.data, self.kernel)
 
-        rgba = spikeyboi.ui.colormaps['inferno'](values)
+        rgba = spikeyboi.ui.colormaps['viridis'](values)
 
         self.buffer.fill((0,0,0,0))
         pg.surfarray.blit_array(self.buffer, rgba[:,:,:-1])
