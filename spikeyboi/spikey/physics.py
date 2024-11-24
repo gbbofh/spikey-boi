@@ -260,5 +260,7 @@ class Physics():
         for obj in self._ray_objects:
             pg.draw.line(surf, (100,100,250), obj[0], obj[1])
 
+        # This causes flickering because raycasting happens on a fixed tick -- need to determine
+        # a way to prevent this flickering from occuring.
         self._ray_objects.clear()
 

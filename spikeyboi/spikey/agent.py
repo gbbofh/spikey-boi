@@ -8,6 +8,10 @@ import spikeyboi.spikey.brain
 
 class Agent(pg.sprite.Sprite):
 
+    WALL_HIT_L_ID = 7
+    WALL_HIT_R_ID = 8
+    FOUND_FOOD_ID = 9
+
     def __init__(self, *group: pg.sprite.Group):
         super().__init__(group)
 
@@ -28,7 +32,8 @@ class Agent(pg.sprite.Sprite):
 
         self.mask = pg.mask.from_surface(self.image)
 
-        self.brain = spikeyboi.spikey.brain.Brain(50, 7, 2)
+        # self.brain = spikeyboi.spikey.brain.Brain(50, 7, 2)
+        self.brain = spikeyboi.spikey.brain.Brain(50, 10, 2)
         self.on_agent_moved_event = []
         self.ray_angles = np.array([np.pi / 3, np.pi / 6, np.pi / 12, 0, -np.pi / 12, -np.pi / 6, -np.pi / 3])
 
@@ -38,6 +43,12 @@ class Agent(pg.sprite.Sprite):
 
         self.distances = np.zeros_like(self.ray_angles)
         self.prev_distances = np.zeros_like(self.ray_angles)
+
+        self.hits = []
+        self.input_scale = np.zeros_like(self.brain.inputs)
+        self.sigmoid_scale = np.zeros_like(self.brain.inputs)
+
+        self.S = lambda x,s: 0.5 / (1 + np.exp(s * (x - 0.8)))
 
     def _make_rotation_matrix(self):
         m = [
@@ -50,10 +61,8 @@ class Agent(pg.sprite.Sprite):
     def fixed_update(self, fixed_delta):
         sim = spikeyboi.spikey.sim_instance
 
-        hits = []
-        input_scale = np.zeros_like(self.brain.inputs)
-
         self.distances[:] = 0
+        self.hits.clear()
 
         for i,a in enumerate(self.ray_angles):
             angle_plus = self.angle + a
@@ -61,8 +70,10 @@ class Agent(pg.sprite.Sprite):
 
             center = self.rect.center
 
-            hit = sim.physics.cast_ray(center, dir_plus, 500, exclude={self})
-            hits.append(hit)
+            ray_length = np.max(spikeyboi.spikey.sim_instance.size)
+
+            hit = sim.physics.cast_ray(center, dir_plus, ray_length, exclude={self})
+            self.hits.append(hit)
 
             if hit:
                 obj, point, dist = hit
@@ -73,13 +84,19 @@ class Agent(pg.sprite.Sprite):
                     # input = 1 / (1 + np.exp(5 * -dist))
 
                     # self.brain.inputs[i] += input
-                    input_scale[i] = 5
-                if type(obj) is spikeyboi.spikey.food.Food:
-                    # input = 1 / (1 + np.exp(5 * -dist))
+                    self.input_scale[i] = 5
+                    self.sigmoid_scale[i] = 0.8
+                    self.brain.rewards[i,:] += 0.06 * fixed_delta
 
-                    # self.brain.inputs[i] += input
-                    input_scale[i] = 5
-                    self.brain.rewards[i,:] += 0.05 * fixed_delta
+                    presyn = self.brain.net.P_pre > 0.2
+                    self.brain.rewards[presyn] += 0.02 * fixed_delta
+
+                    postsyn = self.brain.net.P_post < 0.01
+                    self.brain.rewards[postsyn] -= 0.01 * fixed_delta
+                elif type(obj) is spikeyboi.spikey.agent.Agent:
+                    self.input_scale[i] = 5
+                    self.sigmoid_scale[i] = 0.6
+                    self.brain.rewards[i,:] += 0.04 * fixed_delta
 
                     presyn = self.brain.net.P_pre > 0.2
                     self.brain.rewards[presyn] += 0.02 * fixed_delta
@@ -87,10 +104,8 @@ class Agent(pg.sprite.Sprite):
                     postsyn = self.brain.net.P_post < 0.01
                     self.brain.rewards[postsyn] -= 0.01 * fixed_delta
                 elif type(obj) is spikeyboi.spikey.wall.Wall:
-                    # input = 1 / (1 + np.exp(3 * -dist))
-
-                    # self.brain.inputs[i] += input
-                    input_scale[i] = 3
+                    self.input_scale[i] = 3
+                    self.sigmoid_scale[i] = 0.4
                     self.brain.rewards[i,:] += 0.02 * fixed_delta
 
                     presyn = self.brain.net.P_pre > 0.2
@@ -100,17 +115,14 @@ class Agent(pg.sprite.Sprite):
                     postsyn = self.brain.net.P_post < 0.01
                     postsyn = postsyn[i]
                     self.brain.rewards[postsyn,i] += 0.02 * fixed_delta
-            # else:
-            #     self.brain.inputs[i] *= np.exp(-1 / 20)
 
         deltas = self.distances - self.prev_distances
         self.prev_distances = self.distances
 
         # self.brain.inputs[:] += 0.5 / (1 + np.exp(input_scale * -deltas)) * fixed_delta
         # S = lambda x,s: 0.5 / (1 + np.exp(-s * (x - 0.8)))
-        S = lambda x,s: 0.5 / (1 + np.exp(s * (x - 0.8)))
         # self.brain.inputs[:] = S(deltas, input_scale)
-        self.brain.inputs[:] = S(self.distances, input_scale)
+        self.brain.inputs[:7] = self.sigmoid_scale[:7] * self.S(self.distances, self.input_scale[:7])
         self.brain.inputs[:] *= np.exp(-1/20)
 
         inds = np.where(deltas > 0)
@@ -163,9 +175,8 @@ class Agent(pg.sprite.Sprite):
         return angle * np.sign(c)
 
     def on_collision(self, other):
-        # print(f'{self} collided with {other}')
         if type(other) == spikeyboi.spikey.food.Food:
-            # print('omnomnomnom')
+            self.brain.inputs[Agent.FOUND_FOOD_ID] += 1.0
             self.brain.rewards[:,self.brain.output_first:self.brain.output_last + 1] += 0.5 * spikeyboi.spikey.sim_instance.fixed_delta_time
             self.brain.rewards[self.brain.input_first:self.brain.input_last + 1,:] += 0.3 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
@@ -176,7 +187,6 @@ class Agent(pg.sprite.Sprite):
             self.brain.rewards[postsyn] -= 0.05 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
         elif type(other) == spikeyboi.spikey.wall.Wall:
-            # print('AAAaaaAAAaa')
             ltd = self.brain.output_first if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_last
             ltp = self.brain.output_last if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_first
 
@@ -197,6 +207,5 @@ class Agent(pg.sprite.Sprite):
             self.brain.rewards[postsyn] -= 0.02 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
     def debug_draw(self, surface):
-        # pg.draw.line(surface, (255,255,255), self.rect.center, self.rect.center + self.get_forward() * 300)
         pass
 

@@ -14,7 +14,7 @@ class FoodSource():
         self.max_food = max_food
         self.lifetime = 0.0
         self.max_life = max_life
-        self.radius = 100
+        self.radius = radius
         self.pool = []
         self.on_lifetime_exceeded_event = []
         self.on_object_moved_event = []
@@ -31,13 +31,26 @@ class FoodSource():
             food.rect.x, food.rect.y = x[i], y[i]
             food.on_collision_event.append(self.on_food_collision)
             food.on_lifetime_exceeded_event.append(self.on_food_collision)
+            print(food.rect)
 
         self.groups = groups
-        # self.render_list = None
-        # for group in self.groups:
-        #     if isinstance(group, pg.sprite.RenderUpdates):
-        #         self.render_list = group
-        #         break
+
+    def spawn_food(self, f):
+        r = spikeyboi.spikey.random.uniform(0, self.radius)
+        a = spikeyboi.spikey.random.uniform(0, 2 * np.pi)
+        x = self.pos[0] + r * np.cos(a)
+        y = self.pos[1] + r * np.sin(a)
+
+        lifetime = spikeyboi.spikey.random.uniform(1.0, 5.0)
+        f.rect.x = x
+        f.rect.y = y
+        f.max_life = lifetime if f.max_life > -1 else -1
+
+        str = f'spawning food @ {f.rect.topleft}'
+        print(str)
+
+        spikeyboi.spikey.sim_instance.render_list.add(f)
+        spikeyboi.spikey.sim_instance.physics_group.add(f)
 
     def update(self, delta_time):
         self.lifetime += delta_time
@@ -49,24 +62,12 @@ class FoodSource():
             for e in self.on_lifetime_exceeded_event:
                 e(self)
 
-        r = spikeyboi.spikey.random.uniform(0, self.radius)
-        a = spikeyboi.spikey.random.uniform(0, 2 * np.pi)
-        x = self.pos[0] + r * np.cos(a)
-        y = self.pos[1] + r * np.sin(a)
-
-        lifetime = spikeyboi.spikey.random.uniform(1.0, 5.0)
-
         while len(self.pool) > 0:
             f = self.pool.pop()
-
-            f.rect.x = x
-            f.rect.y = y
-            f.max_life = lifetime if f.max_life > -1 else -1
-
-            spikeyboi.spikey.sim_instance.render_list.add(f)
-            spikeyboi.spikey.sim_instance.physics_group.add(f)
+            self.spawn_food(f)
 
     def on_food_collision(self, food):
         self.pool.append(food)
+        print(self.pool)
         for e in self.on_object_moved_event:
             e(food)
