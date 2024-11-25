@@ -50,13 +50,15 @@ class Physics():
                         unresolved = True  # There are still collisions to resolve
 
                         # Resolve collision
-                        self.resolve_collision(obj, other)
+                        rel_pos = self.resolve_collision(obj, other)
 
                         # Notify objects of the collision
                         if hasattr(obj, "on_collision"):
-                            obj.on_collision(other)
+                            obj.on_collision(other, rel_pos)
                         if hasattr(other, "on_collision"):
-                            other.on_collision(obj)
+                            other.on_collision(obj, rel_pos)
+
+                self._ray_objects.clear()
 
     def collision_normal(self, left, right):
         """
@@ -122,6 +124,73 @@ class Physics():
                 other.rect.x -= dx
                 other.rect.y -= dy
                 other.x, other.y = other.rect.x, other.rect.y
+            return (-dx, -dy)
+
+    # def cast_cone(self, origin, direction, angle, max_distance, exclude=None):
+    #     pass
+
+    def cast_cone(self, origin, direction, angle, max_distance, exclude=None):
+        """
+        Cast a cone from an origin and detect objects within it.
+        
+        Args:
+            origin (tuple): Starting point of the cone as (x, y).
+            direction (tuple): Direction vector for the cone.
+            angle (float): Full angle of the cone in degrees.
+            max_distance (float): Maximum distance the cone extends.
+            exclude (set): Optional set of objects to exclude from detection.
+        
+        Returns:
+            list: A list of objects detected within the cone.
+        """
+        exclude = exclude or set()
+        origin = np.array(origin, dtype=float)
+        direction = np.array(direction, dtype=float)
+        direction /= np.linalg.norm(direction)  # Normalize direction vector
+        
+        # Calculate the boundaries of the cone
+        half_angle = np.radians(angle / 2)
+        cos_half_angle = np.cos(half_angle)
+        
+        # Convert max_distance to a circle boundary for broad phase
+        cone_rect = pg.Rect(
+            origin[0] - max_distance,
+            origin[1] - max_distance,
+            2 * max_distance,
+            2 * max_distance
+        )
+        
+        # Broad phase collision detection (using a quadtree or all objects)
+        candidates = self.quadtree.hit(cone_rect) if hasattr(self, "quadtree") else self.objects
+        
+        detected = []
+        
+        for obj in candidates:
+            if obj in exclude or not hasattr(obj, 'rect') or not hasattr(obj, 'mask'):
+                continue
+
+            # Calculate vector from origin to object's center
+            obj_center = np.array(obj.rect.center, dtype=float)
+            to_obj = obj_center - origin
+            dist = np.linalg.norm(to_obj)
+            
+            if dist > max_distance:
+                continue  # Skip objects outside the max distance
+            
+            # Check angle
+            if dist > 0:
+                to_obj /= dist  # Normalize vector to object
+            dot_product = np.dot(direction, to_obj)
+            if dot_product < cos_half_angle:
+                continue  # Skip objects outside the cone angle
+            
+            # Fine phase: Check precise collision with the mask
+            local_origin = (int(origin[0] - obj.rect.x), int(origin[1] - obj.rect.y))
+            overlap = obj.mask.overlap_area(pg.mask.Mask((1, 1), fill=True), local_origin)
+            if overlap > 0:
+                detected.append(obj)
+    
+        return detected
 
     def cast_ray(self, origin, direction, max_distance, exclude=None):
         """
@@ -262,5 +331,5 @@ class Physics():
 
         # This causes flickering because raycasting happens on a fixed tick -- need to determine
         # a way to prevent this flickering from occuring.
-        self._ray_objects.clear()
+        # self._ray_objects.clear()
 

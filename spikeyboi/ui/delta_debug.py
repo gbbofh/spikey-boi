@@ -24,6 +24,8 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         self.data = np.zeros_like(self.net.dw)
         self.alpha = 0.1
 
+        spikeyboi.app_instance.on_agent_selected_event.append(self.on_agent_selected)
+
     def on_update(self, delta_time):
         # super().update(delta_time)
 
@@ -52,3 +54,6 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
     def on_load_completed(self):
         self.net = self.sim.agent.brain.net
+
+    def on_agent_selected(self, agent):
+        self.net = agent.brain.net

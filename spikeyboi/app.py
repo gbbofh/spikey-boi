@@ -26,6 +26,7 @@ class App():
         self.on_save_event = []
         self.on_load_event = []
         self.on_load_completed_event = []
+        self.on_agent_selected_event = []
 
         self.run = True
         self.time_accum = 0.0
@@ -106,6 +107,7 @@ class App():
 
     def toggle_quadtree_debug(self):
         spikeyboi.spikey.sim_instance.debug_quadtree = not spikeyboi.spikey.sim_instance.debug_quadtree
+
     def process_events(self):
         for e in pg.event.get():
             if e.type == pg.QUIT:
@@ -126,6 +128,10 @@ class App():
                 print(f'Saving: {res}')
 
                 self.on_save(e.file_path)
+
+            if e.type == spikeyboi.ui.viewport.UI_AGENT_SELECTED:
+                spikeyboi.spikey.sim_instance.agent = e.agent
+                self.on_agent_selected(e.agent)
 
             if e.type == gui.UI_WINDOW_CLOSE:
                 if e.ui_element == self.load_dialog:
@@ -179,6 +185,10 @@ class App():
     def on_save(self, path):
         for e in self.on_save_event:
             e(path)
+
+    def on_agent_selected(self, agent):
+        for e in self.on_agent_selected_event:
+            e(agent)
 
     def fixed_update(self, fixed_delta):
         if not self.pause:

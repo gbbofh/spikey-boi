@@ -37,7 +37,7 @@ class Food(pg.sprite.Sprite):
         if self.lifetime >= self.max_life and render_list is not None:
             self.on_lifetime_exceeded()
 
-    def on_collision(self, other):
+    def on_collision(self, other, rel_pos):
         if type(other) == type(self):
             return
 

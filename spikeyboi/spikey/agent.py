@@ -33,7 +33,7 @@ class Agent(pg.sprite.Sprite):
         self.mask = pg.mask.from_surface(self.image)
 
         # self.brain = spikeyboi.spikey.brain.Brain(50, 7, 2)
-        self.brain = spikeyboi.spikey.brain.Brain(50, 10, 2)
+        self.brain = spikeyboi.spikey.brain.Brain(30, 10, 2)
         self.on_agent_moved_event = []
         self.ray_angles = np.array([np.pi / 3, np.pi / 6, np.pi / 12, 0, -np.pi / 12, -np.pi / 6, -np.pi / 3])
 
@@ -174,9 +174,9 @@ class Agent(pg.sprite.Sprite):
 
         return angle * np.sign(c)
 
-    def on_collision(self, other):
+    def on_collision(self, other, rel_pos):
         if type(other) == spikeyboi.spikey.food.Food:
-            self.brain.inputs[Agent.FOUND_FOOD_ID] += 1.0
+            self.brain.inputs[Agent.FOUND_FOOD_ID] += 0.2
             self.brain.rewards[:,self.brain.output_first:self.brain.output_last + 1] += 0.5 * spikeyboi.spikey.sim_instance.fixed_delta_time
             self.brain.rewards[self.brain.input_first:self.brain.input_last + 1,:] += 0.3 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
@@ -189,6 +189,16 @@ class Agent(pg.sprite.Sprite):
         elif type(other) == spikeyboi.spikey.wall.Wall:
             ltd = self.brain.output_first if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_last
             ltp = self.brain.output_last if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_first
+
+            if rel_pos is not None:
+                dx, dy = np.abs(rel_pos)
+
+                if dx < dy:
+                    self.brain.inputs[Agent.WALL_HIT_L_ID] += 0.2
+                    self.brain.rewards[Agent.WALL_HIT_L_ID] += 0.3
+                else:
+                    self.brain.inputs[Agent.WALL_HIT_R_ID] += 0.2
+                    self.brain.rewards[Agent.WALL_HIT_R_ID] += 0.3
 
             mask = self.distances > 0
             r = self.brain.rewards[:len(self.distances)]

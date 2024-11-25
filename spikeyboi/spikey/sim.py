@@ -18,7 +18,7 @@ import spikeyboi.spikey.wall
 
 class Simulation():
 
-    def __init__(self, size=(800,600), num_agents=1):
+    def __init__(self, size=(800,600), num_agents=2):
         spikeyboi.spikey.sim_instance = self
         self.app = spikeyboi.app_instance
 
@@ -42,10 +42,10 @@ class Simulation():
 
         for i in range(num_agents):
             a = spikeyboi.spikey.agent.Agent(self.agent_group, self.physics_group, self.all_entities, self.render_list)
-            # a.x, a.y = spikeyboi.spikey.random(
             a.x = spikeyboi.spikey.random.integers(60, w - 60)
             a.y = spikeyboi.spikey.random.integers(60, h - 60)
             a.rect.topleft = a.x, a.y
+            a.angle = spikeyboi.spikey.random.uniform(0, 2 * np.pi)
             self.agent = a
 
         # agent = spikeyboi.spikey.agent.Agent(self.agent_group, self.physics_group, self.all_entities, self.render_list)
@@ -136,6 +136,10 @@ class Simulation():
             spikeyboi.spikey.random = np.random.default_rng(rng_seed)
 
             self.agent.brain = pickle.load(fp)
+
+    def select_agent(self, agent):
+        self.agent = agent
+
 
 if __name__ == '__main__':
     sim = Simulation()
