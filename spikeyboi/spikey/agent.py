@@ -49,6 +49,7 @@ class Agent(pg.sprite.Sprite):
         self.sigmoid_scale = np.zeros_like(self.brain.inputs)
 
         self.S = lambda x,s: 0.5 / (1 + np.exp(s * (x - 0.8)))
+        self.id = 0
 
     def _make_rotation_matrix(self):
         m = [

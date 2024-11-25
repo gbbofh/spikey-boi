@@ -3,6 +3,7 @@ import pygame as pg
 
 
 import spikeyboi.spikey
+import spikeyboi.spikey.agent
 
 
 class Food(pg.sprite.Sprite):
@@ -25,6 +26,7 @@ class Food(pg.sprite.Sprite):
         self.on_lifetime_exceeded_event = []
 
         self.is_static = False
+        self.id = 0
 
     def update(self, delta_time):
         self.lifetime += delta_time
@@ -38,18 +40,24 @@ class Food(pg.sprite.Sprite):
             self.on_lifetime_exceeded()
 
     def on_collision(self, other, rel_pos):
-        if type(other) == type(self):
+        if type(other) != spikeyboi.spikey.agent.Agent:
             return
 
-        spikeyboi.spikey.sim_instance.render_list.remove(self)
-        spikeyboi.spikey.sim_instance.physics_group.remove(self)
+        print(f'{other=} collided with {self=}')
+
+        # spikeyboi.spikey.sim_instance.render_list.remove(self)
+        # spikeyboi.spikey.sim_instance.physics_group.remove(self)
+        # spikeyboi.spikey.sim_instance.food_group.remove(self)
+        # spikeyboi.spikey.sim_instance.all_entities.remove(self)
 
         for e in self.on_collision_event:
-            e(self)
+            e(self, other)
 
     def on_lifetime_exceeded(self):
-        spikeyboi.spikey.sim_instance.render_list.remove(self)
-        spikeyboi.spikey.sim_instance.physics_group.remove(self)
-        self.lifetime = 0.0
+        # spikeyboi.spikey.sim_instance.render_list.remove(self)
+        # spikeyboi.spikey.sim_instance.physics_group.remove(self)
+        # spikeyboi.spikey.sim_instance.food_group.remove(self)
+        # spikeyboi.spikey.sim_instance.all_entities.remove(self)
+        # self.lifetime = 0.0
         for e in self.on_lifetime_exceeded_event:
             e(self)
