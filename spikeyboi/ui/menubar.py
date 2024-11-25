@@ -22,13 +22,14 @@ class UIMenuBar(pygame_gui.elements.UIPanel):
         self.menu_count = len(menu_data.keys())
         self.menu_width = 0
         self.button_width = 90
+        self.button_x = 20
 
         # Create menu buttons and dropdowns based on menu_data
         button_x = 20
         for menu_name, options in menu_data.items():
             # Create the main menu button
             button = pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect((button_x, 0), (self.button_width - 10, relative_rect.height)),
+                relative_rect=pygame.Rect((self.button_x, 0), (self.button_width - 10, relative_rect.height)),
                 text=menu_name,
                 manager=manager,
                 container=self,
@@ -38,7 +39,7 @@ class UIMenuBar(pygame_gui.elements.UIPanel):
 
             # Create a hidden dropdown panel for the menu
             dropdown_panel = pygame_gui.elements.UIPanel(
-                relative_rect=pygame.Rect((button_x, relative_rect.height), (120, 30 * len(options) + 5)),
+                relative_rect=pygame.Rect((self.button_x, relative_rect.height), (120, 30 * len(options) + 5)),
                 manager=manager,
                 visible=False,
                 starting_height=10
@@ -59,8 +60,10 @@ class UIMenuBar(pygame_gui.elements.UIPanel):
                 # Store the action associated with the option
                 option_button.action = option
 
-            button_x += self.button_width  # Adjust for the next button
-            self.menu_width = button_x
+            self.button_x += self.button_width  # Adjust for the next button
+            self.menu_width = self.button_x
+
+        self.add_spacer(20)
 
         # Track the open state of the dropdowns
         self.open_dropdown = None
@@ -69,19 +72,24 @@ class UIMenuBar(pygame_gui.elements.UIPanel):
         self.action_callbacks[action] = callback
 
     def add_toolbar_button(self, id, callback=None):
-        button_x = self.menu_width + 20
-        button_x += 50 * len(self.toolbar_buttons) + 10
+        # button_x = self.menu_width + 20
+        # button_x += 50 * len(self.toolbar_buttons) + 10
         button = pygame_gui.elements.UIButton(
-            relative_rect=pygame.Rect((button_x, 0), (50, self.relative_rect.height - 5)),
+            relative_rect=pygame.Rect((self.button_x, 0), (50, self.relative_rect.height - 5)),
             text='',
             object_id=id,
             manager=self.ui_manager,
             container=self)
 
+        self.button_x += 50
+
         button.bind(pygame_gui.UI_BUTTON_PRESSED, callback)
         self.toolbar_buttons.append(button)
 
         return button
+
+    def add_spacer(self, width):
+        self.button_x += width
 
     def process_event(self, event):
         # Handle button presses for menu options
