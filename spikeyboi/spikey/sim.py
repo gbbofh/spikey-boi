@@ -10,7 +10,8 @@ import spikeyboi
 import spikeyboi.spikey
 import spikeyboi.spikey.agent
 import spikeyboi.spikey.food
-import spikeyboi.spikey.food_source
+# import spikeyboi.spikey.food_source
+import spikeyboi.spikey.food_spawner
 import spikeyboi.spikey.physics
 import spikeyboi.spikey.quadtree
 import spikeyboi.spikey.wall
@@ -18,7 +19,7 @@ import spikeyboi.spikey.wall
 
 class Simulation():
 
-    def __init__(self, size=(800,600), num_agents=2):
+    def __init__(self, size=(800,600), num_agents=5):
         spikeyboi.spikey.sim_instance = self
         self.app = spikeyboi.app_instance
 
@@ -42,6 +43,7 @@ class Simulation():
 
         for i in range(num_agents):
             a = spikeyboi.spikey.agent.Agent(self.agent_group, self.physics_group, self.all_entities, self.render_list)
+            a.id = i
             a.x = spikeyboi.spikey.random.integers(60, w - 60)
             a.y = spikeyboi.spikey.random.integers(60, h - 60)
             a.rect.topleft = a.x, a.y
@@ -58,10 +60,14 @@ class Simulation():
         # agent.rect.x, agent.rect.y = agent.x, agent.y
         # self.agent2 = agent
 
-        food_source_pos = center
+        # food_source_pos = center
 
-        self.food_source = spikeyboi.spikey.food_source.FoodSource(food_source_pos, 50, 50, -1.0, self.food_group, self.all_entities, self.physics_group, self.render_list)
-        self.food_source.on_lifetime_exceeded_event.append(self.on_food_source_lifetime_exceeded)
+        # self.food_source = spikeyboi.spikey.food_source.FoodSource(food_source_pos, 50, 50, -1.0, self.food_group, self.all_entities, self.physics_group, self.render_list)
+        # self.food_source.on_lifetime_exceeded_event.append(self.on_food_source_lifetime_exceeded)
+
+        spawn_rect = pg.Rect((60, 60, w - 60, h - 60))
+        self.food_spawner = spikeyboi.spikey.food_spawner.FoodSpawner(spawn_rect, spawn_rate=3)
+        self.all_entities.add(self.food_spawner)
 
         wall_thickness = 50
 
@@ -99,7 +105,7 @@ class Simulation():
         pass
 
     def fixed_update(self, fixed_delta):
-        self.food_source.update(fixed_delta)
+        # self.food_source.update(fixed_delta)
 
         self.all_entities.update(fixed_delta)
         self.all_entities.fixed_update(fixed_delta)
@@ -111,6 +117,10 @@ class Simulation():
 
         self.rect = surface.get_rect()
         self.size = self.rect.size
+
+        pos = self.agent.rect.center
+        pg.draw.circle(surface, (200,50,100,10), pos, 20)
+
         self.render_list.draw(surface)
 
         if self.debug_physics:
