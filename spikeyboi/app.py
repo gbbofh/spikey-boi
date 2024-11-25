@@ -8,7 +8,9 @@ import spikeyboi.ui.reward_debug
 import spikeyboi.ui.eligibility_debug
 import spikeyboi.ui.dendrogram_debug
 import spikeyboi.ui.spike_debug
+import spikeyboi.ui.firing_rate_debug
 import spikeyboi.ui.fps_debug
+import spikeyboi.ui.agent_info
 import spikeyboi.ui.file_dialog
 import spikeyboi.ui.settings
 
@@ -47,8 +49,8 @@ class App():
         menubar_data = {
             'Agent': ['New Brain', 'Load Brain', 'Save Brain'],
             'Simulation': ['Reset Sim', 'Load Sim', 'Save Sim'],
-            'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Spikes', 'Toggle Blur'],
-            'Analyze': ['Dendrogram'],
+            'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Spikes', 'Firing Rates', 'Toggle Blur'],
+            'Analyze': ['Dendrogram', 'Louvain Communities'],
             'Debug': ['Physics', 'Quadtree', 'Toggle FPS']
         }
 
@@ -70,7 +72,7 @@ class App():
         self.menubar.bind_action('Rewards', lambda: self.toggle_window(self.rd_view))
         self.menubar.bind_action('Eligibility', lambda: self.toggle_window(self.ed_view))
         self.menubar.bind_action('Spikes', lambda: self.toggle_window(self.spike_view))
-        self.menubar.bind_action('Toggle FPS', lambda: self.toggle_window(self.fps_debug))
+        self.menubar.bind_action('Firing Rates', lambda: self.toggle_window(self.firing_rate_view))
         self.menubar.bind_action('Toggle Blur', self.toggle_kernels)
 
         # Analysis options
@@ -79,18 +81,7 @@ class App():
         # Debug options
         self.menubar.bind_action('Physics', self.toggle_physics_debug)
         self.menubar.bind_action('Quadtree', self.toggle_quadtree_debug)
-
-        self.viewport = spikeyboi.ui.viewport.UIViewport(pg.Rect((0,0),(size[0], size[1] - 30)), self.manager, anchors={'top_target': self.menubar})
-
-        self.dd_view = spikeyboi.ui.delta_debug.UIDeltaDebugger('Synaptic Deltas', (100,100,200,200), self.manager)
-        self.sd_view = spikeyboi.ui.synapse_debug.UISynapseDebugger('Synaptic Weights', (100,100,200,200), self.manager)
-        self.rd_view = spikeyboi.ui.reward_debug.UIRewardDebugger('Synaptic Rewards', (100,100,200,200), self.manager)
-        self.ed_view = spikeyboi.ui.eligibility_debug.UIEligibilityDebugger('Reward Eligibility', (100,100,200,200), self.manager)
-        self.spike_view = spikeyboi.ui.spike_debug.UISpikeDebugger('Spikes', (100,100,200,200), self.manager)
-
-        self.dendro_view = spikeyboi.ui.dendrogram_debug.UIDendrogramDebugger('Dendrogram', (100,100,300,200), self.manager)
-
-        self.fps_debug = spikeyboi.ui.fps_debug.UIFPSDebugger((-100,5), self.manager)
+        self.menubar.bind_action('Toggle FPS', lambda: self.toggle_window(self.fps_debug))
 
         self.toolbar_play = self.menubar.add_toolbar_button('#run', self.toolbar_play_pressed)
         self.toolbar_pause = self.menubar.add_toolbar_button('#pause', self.toolbar_pause_pressed)
@@ -99,6 +90,32 @@ class App():
         self.toolbar_settings = self.menubar.add_toolbar_button('#settings', self.toolbar_settings_pressed)
 
         self.toolbar_play.disable()
+
+        self.viewport = spikeyboi.ui.viewport.UIViewport(pg.Rect((0,0),(size[0], size[1] - 30)), self.manager, anchors={'top_target': self.menubar})
+
+        self.dd_view = spikeyboi.ui.delta_debug.UIDeltaDebugger('Synaptic Deltas', (100,100,200,200), self.manager)
+        self.sd_view = spikeyboi.ui.synapse_debug.UISynapseDebugger('Synaptic Weights', (100,100,200,200), self.manager)
+        self.rd_view = spikeyboi.ui.reward_debug.UIRewardDebugger('Synaptic Rewards', (100,100,200,200), self.manager)
+        self.ed_view = spikeyboi.ui.eligibility_debug.UIEligibilityDebugger('Reward Eligibility', (100,100,200,200), self.manager)
+        self.spike_view = spikeyboi.ui.spike_debug.UISpikeDebugger('Spikes', (100,100,200,200), self.manager)
+        self.firing_rate_view = spikeyboi.ui.firing_rate_debug.UIFiringRateDebugger('Firing Rates', (100,100,200,200), self.manager)
+
+        self.dendro_view = spikeyboi.ui.dendrogram_debug.UIDendrogramDebugger('Dendrogram', (100,100,300,200), self.manager)
+
+        # self.fps_debug = spikeyboi.ui.fps_debug.UIFPSDebugger((-100,5), self.manager)
+        widget_container = self.menubar.get_widget_container()
+
+        self.fps_debug = spikeyboi.ui.fps_debug.UIFPSDebugger((-60,0),
+                                                            self.manager,
+                                                            anchors={'right':'right'}, 
+                                                            container=widget_container,
+                                                            parent_element=self.menubar)
+        info_rect = pg.Rect(-200,0,100,self.menubar.rect.h)
+        self.agent_info = spikeyboi.ui.agent_info.UIAgentInfo(info_rect,
+                                                            manager=self.manager,
+                                                            container=widget_container,
+                                                            parent_element=self.menubar,
+                                                            anchors={'right':'right'})
 
         self.buffer = pg.Surface(self.display.size, pg.SRCALPHA)
 
@@ -121,7 +138,11 @@ class App():
     def toolbar_settings_pressed(self):
         x,y = 10,10
         w,h = self.size
-        self.settings_dialog = spikeyboi.ui.settings.UISettingsWindow(pg.Rect(x,y,w,h), self.manager)
+        rect = pg.Rect(x,y,w,h)
+        self.settings_dialog = spikeyboi.ui.settings.UISettingsWindow(rect, self.manager, self.settings_saved)
+
+    def settings_saved(self, config):
+        pass
 
     def toggle_physics_debug(self):
         spikeyboi.spikey.sim_instance.debug_physics = not spikeyboi.spikey.sim_instance.debug_physics
@@ -169,6 +190,7 @@ class App():
         self.ed_view.kernel_enabled = not self.ed_view.kernel_enabled
         self.dd_view.kernel_enabled = not self.dd_view.kernel_enabled
         self.spike_view.kernel_enabled = not self.spike_view.kernel_enabled
+        self.firing_rate_view.kernel_enabled = not self.firing_rate_view.kernel_enabled
 
     def show_load_brain_dialog(self):
         x,y = 10,10
@@ -206,6 +228,7 @@ class App():
         w,h = self.size
         agent = spikeyboi.spikey.sim_instance.agent
         path = f'data/saves/sim/sim-{datetime.datetime.utcnow()}.pickle'
+        path = path.replace(':', '-')
         self.save_dialog = spikeyboi.ui.file_dialog.UIFileDialog(pg.Rect(x,y,w,h),
                                                                 self.manager,
                                                                 self.on_save_sim,
