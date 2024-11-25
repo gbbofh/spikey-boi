@@ -74,5 +74,12 @@
                  "resource": "settings_16x16.png"
              }
          }
+     },
+     "#agent_info":
+     {
+         "colours":
+         {
+             "normal_border": "#00000000"
+         }
      }
  }
