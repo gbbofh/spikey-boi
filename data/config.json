@@ -1,0 +1,16 @@
+{
+    "settings":
+    {
+        "display":
+        {
+            "blur": true,
+            "width": 1024,
+            "height": 768
+        },
+        "simulation":
+        {
+            "agents": 5,
+            "spawn-rate": 3.0
+        }
+    }
+}
