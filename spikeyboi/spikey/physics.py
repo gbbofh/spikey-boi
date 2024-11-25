@@ -252,7 +252,8 @@ class Physics():
             ray_surface = pg.Surface(obj.rect.size, pg.SRCALPHA)
             
             # Draw the line in object space
-            pg.draw.line(ray_surface, (255, 255, 255, 255), local_origin, local_end)
+            # Testing with thicker lines
+            pg.draw.line(ray_surface, (255, 255, 255, 255), local_origin, local_end, 3)
             ray_mask = pg.mask.from_surface(ray_surface)
             # pg.image.save(ray_mask.to_surface(), "ray_mask_debug.png")
             

@@ -19,7 +19,7 @@ import spikeyboi.spikey.wall
 
 class Simulation():
 
-    def __init__(self, size=(800,600), num_agents=5):
+    def __init__(self, size=(800,600), num_agents=8):
         spikeyboi.spikey.sim_instance = self
         self.app = spikeyboi.app_instance
 
