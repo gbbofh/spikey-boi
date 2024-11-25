@@ -25,6 +25,8 @@ class Physics():
         max_iterations = 20
         iterations = 0
 
+        pairs = set()
+
         while unresolved and iterations < max_iterations:
             unresolved = False
             iterations += 1
@@ -46,11 +48,18 @@ class Physics():
                     # if obj == other:
                     #     continue  # Skip self and invalid objects
 
+                    pair = (min(id(obj), id(other)), max(id(obj), id(other)))
+
                     if obj.rect.colliderect(other.rect):
                         unresolved = True  # There are still collisions to resolve
 
                         # Resolve collision
                         rel_pos = self.resolve_collision(obj, other)
+
+                        if pair in pairs:
+                            continue
+
+                        pairs.add(pair)
 
                         # Notify objects of the collision
                         if hasattr(obj, "on_collision"):
