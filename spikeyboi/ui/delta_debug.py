@@ -41,7 +41,7 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         if not (self.kernel is None) and self.kernel_enabled:
             values = sp.ndimage.convolve(self.data, self.kernel)
 
-        rgba = spikeyboi.ui.colormaps['viridis'](values)
+        rgba = spikeyboi.ui.colormaps['magma'](values)
 
         self.buffer.fill((0,0,0,0))
         pg.surfarray.blit_array(self.buffer, rgba[:,:,:-1])
@@ -54,6 +54,8 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
     def on_load_completed(self):
         self.net = self.sim.agent.brain.net
+        self.data[:] = 0
 
     def on_agent_selected(self, agent):
         self.net = agent.brain.net
+        self.data[:] = 0

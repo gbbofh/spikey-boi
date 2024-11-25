@@ -53,6 +53,8 @@ class UIEligibilityDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
     def on_load_completed(self):
         self.net = self.sim.agent.brain.net
+        self.data[:] = 0
 
     def on_agent_selected(self, agent):
         self.net = agent.brain.net
+        self.data[:] = 0

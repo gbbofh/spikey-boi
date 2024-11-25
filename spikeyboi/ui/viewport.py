@@ -25,12 +25,15 @@ class UIViewport(gui.elements.UIPanel):
                                             manager=manager,container=self,
                                             parent_element=self)
 
-        self.buffer = pg.Surface(relative_rect.size, pg.SRCALPHA)
+        self.buffer = pg.Surface(self.get_container().get_size(), pg.SRCALPHA)
 
     def update(self, delta_time):
         super().update(delta_time)
 
-        self.sim.draw(self.sim_surf.image)
+        self.buffer.fill((0,0,0,0))
+        self.sim_surf.image.fill((0,0,0,0))
+        self.sim.draw(self.buffer)
+        self.sim_surf.image.blit(self.buffer, (0,0))
 
     def fixed_update(self, fixed_delta):
         self.sim.update(delta_time)
