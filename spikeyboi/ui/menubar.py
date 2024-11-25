@@ -64,6 +64,7 @@ class UIMenuBar(pygame_gui.elements.UIPanel):
             self.menu_width = self.button_x
 
         self.add_spacer(20)
+        self.widget_container = None
 
         # Track the open state of the dropdowns
         self.open_dropdown = None
@@ -90,6 +91,13 @@ class UIMenuBar(pygame_gui.elements.UIPanel):
 
     def add_spacer(self, width):
         self.button_x += width
+
+    def get_widget_container(self):
+        if not self.widget_container:
+            wc_rect = pygame.Rect(self.button_x, 0, self.relative_rect.w - self.button_x, self.relative_rect.h)
+            self.widget_container = pygame_gui.core.UIContainer(wc_rect, self.ui_manager, container=self, parent_element=self)
+
+        return self.widget_container
 
     def process_event(self, event):
         # Handle button presses for menu options

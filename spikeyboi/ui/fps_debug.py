@@ -4,8 +4,9 @@ import pygame_gui as gui
 
 class UIFPSDebugger(gui.elements.UILabel):
 
-    def __init__(self, rect, manager, anchors={'right': 'right', 'top':'top'}):
-        super().__init__(rect, '', manager, anchors=anchors)
+    # def __init__(self, rect, manager, anchors={'right': 'right', 'top':'top'}):
+    def __init__(self, rect, manager, *args, **kwargs):
+        super().__init__(rect, '', manager, *args, **kwargs)
         self.show()
 
     def update(self, delta_time):
