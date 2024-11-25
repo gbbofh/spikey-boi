@@ -10,6 +10,7 @@ import spikeyboi.ui.dendrogram_debug
 import spikeyboi.ui.spike_debug
 import spikeyboi.ui.fps_debug
 import spikeyboi.ui.file_dialog
+import spikeyboi.ui.settings
 
 
 import pickle
@@ -44,9 +45,9 @@ class App():
 
         menubar_data = {
             'File': ['New Brain', 'Save Brain', 'Load Brain'],
-            'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Spikes', 'Toggle FPS', 'Toggle Blur'],
+            'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Spikes', 'Toggle Blur'],
             'Analyze': ['Dendrogram'],
-            'Debug': ['Physics', 'Quadtree']
+            'Debug': ['Physics', 'Quadtree', 'Toggle FPS']
         }
 
         self.menubar = spikeyboi.ui.menubar.UIMenuBar(pg.Rect((0,0),(size[0],50)), self.manager, menubar_data)
@@ -83,6 +84,9 @@ class App():
         self.toolbar_play = self.menubar.add_toolbar_button('#run', self.toolbar_play_pressed)
         self.toolbar_pause = self.menubar.add_toolbar_button('#pause', self.toolbar_pause_pressed)
 
+        self.menubar.add_spacer(50)
+        self.toolbar_settings = self.menubar.add_toolbar_button('#settings', self.toolbar_settings_pressed)
+
         self.toolbar_play.disable()
 
         self.buffer = pg.Surface(self.display.size, pg.SRCALPHA)
@@ -91,6 +95,7 @@ class App():
 
         self.load_dialog = None
         self.save_dialog = None
+        self.settings_dialog = None
 
     def toolbar_play_pressed(self):
         self.toolbar_play.disable()
@@ -101,6 +106,11 @@ class App():
         self.toolbar_play.enable()
         self.toolbar_pause.disable()
         self.pause = True
+
+    def toolbar_settings_pressed(self):
+        x,y = 10,10
+        w,h = self.size
+        self.settings_dialog = spikeyboi.ui.settings.UISettingsWindow(pg.Rect(x,y,w,h), self.manager)
 
     def toggle_physics_debug(self):
         spikeyboi.spikey.sim_instance.debug_physics = not spikeyboi.spikey.sim_instance.debug_physics
@@ -138,6 +148,8 @@ class App():
                     self.load_dialog = None
                 elif e.ui_element == self.save_dialog:
                     self.save_dialog = None
+                elif e.ui_element == self.settings_dialog:
+                    self.settings_dialog = None
 
             self.manager.process_events(e)
 
@@ -157,6 +169,7 @@ class App():
         self.rd_view.kernel_enabled = not self.rd_view.kernel_enabled
         self.ed_view.kernel_enabled = not self.ed_view.kernel_enabled
         self.dd_view.kernel_enabled = not self.dd_view.kernel_enabled
+        self.spike_view.kernel_enabled = not self.spike_view.kernel_enabled
 
     def show_load_dialog(self):
         # default_path = 'sim.pickle'
