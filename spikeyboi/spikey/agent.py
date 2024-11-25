@@ -50,6 +50,7 @@ class Agent(pg.sprite.Sprite):
 
         self.S = lambda x,s: 0.5 / (1 + np.exp(s * (x - 0.8)))
         self.id = 0
+        self.food_consumed = 0
 
     def _make_rotation_matrix(self):
         m = [
@@ -177,6 +178,7 @@ class Agent(pg.sprite.Sprite):
 
     def on_collision(self, other, rel_pos):
         if type(other) == spikeyboi.spikey.food.Food:
+            self.food_consumed += 1
             self.brain.inputs[Agent.FOUND_FOOD_ID] += 0.2
             self.brain.rewards[:,self.brain.output_first:self.brain.output_last + 1] += 0.5 * spikeyboi.spikey.sim_instance.fixed_delta_time
             self.brain.rewards[self.brain.input_first:self.brain.input_last + 1,:] += 0.3 * spikeyboi.spikey.sim_instance.fixed_delta_time
