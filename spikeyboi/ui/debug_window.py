@@ -31,7 +31,7 @@ class UIDebugWindow(gui.elements.UIWindow):
         self.sim = spikeyboi.spikey.sim_instance
         self.kernel = None
 
-        spikeyboi.app_instance.on_load_completed_event.append(self.on_load_completed)
+        spikeyboi.app_instance.on_load_brain_completed_event.append(self.on_load_brain_completed)
 
     def update(self, delta_time):
         super().update(delta_time)
@@ -53,5 +53,5 @@ class UIDebugWindow(gui.elements.UIWindow):
                 self.set_dimensions((ns, ns))
         return super().process_event(e)
 
-    def on_load_completed(self):
+    def on_load_brain_completed(self):
         pass

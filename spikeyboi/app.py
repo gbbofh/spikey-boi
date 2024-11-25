@@ -14,6 +14,7 @@ import spikeyboi.ui.settings
 
 
 import pickle
+import datetime
 
 
 import pygame as pg
@@ -24,9 +25,9 @@ class App():
     def __init__(self, title='spikeyboi', size=(800,600)):
         spikeyboi.app_instance = self
 
-        self.on_save_event = []
-        self.on_load_event = []
-        self.on_load_completed_event = []
+        self.on_save_brain_event = []
+        self.on_load_brain_event = []
+        self.on_load_brain_completed_event = []
         self.on_agent_selected_event = []
 
         self.run = True
@@ -44,7 +45,8 @@ class App():
         self.manager = gui.UIManager(size, theme)
 
         menubar_data = {
-            'File': ['New Brain', 'Save Brain', 'Load Brain'],
+            'Agent': ['New Brain', 'Load Brain', 'Save Brain'],
+            'Simulation': ['Reset Sim', 'Load Sim', 'Save Sim'],
             'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Spikes', 'Toggle Blur'],
             'Analyze': ['Dendrogram'],
             'Debug': ['Physics', 'Quadtree', 'Toggle FPS']
@@ -52,10 +54,17 @@ class App():
 
         self.menubar = spikeyboi.ui.menubar.UIMenuBar(pg.Rect((0,0),(size[0],50)), self.manager, menubar_data)
 
+        # Agent options
         self.menubar.bind_action('New Brain', self.new_brain)
-        self.menubar.bind_action('Save Brain', self.show_save_dialog)
-        self.menubar.bind_action('Load Brain', self.show_load_dialog)
+        self.menubar.bind_action('Save Brain', self.show_save_brain_dialog)
+        self.menubar.bind_action('Load Brain', self.show_load_brain_dialog)
 
+        # Simulation options
+        self.menubar.bind_action('Reset Sim', self.reset_sim)
+        self.menubar.bind_action('Save Sim', self.show_save_sim_dialog)
+        self.menubar.bind_action('Load Sim', self.show_load_sim_dialog)
+
+        # View options
         self.menubar.bind_action('Synapses', lambda: self.toggle_window(self.sd_view))
         self.menubar.bind_action('Deltas', lambda: self.toggle_window(self.dd_view))
         self.menubar.bind_action('Rewards', lambda: self.toggle_window(self.rd_view))
@@ -64,8 +73,10 @@ class App():
         self.menubar.bind_action('Toggle FPS', lambda: self.toggle_window(self.fps_debug))
         self.menubar.bind_action('Toggle Blur', self.toggle_kernels)
 
+        # Analysis options
         self.menubar.bind_action('Dendrogram', lambda: self.toggle_window(self.dendro_view))
 
+        # Debug options
         self.menubar.bind_action('Physics', self.toggle_physics_debug)
         self.menubar.bind_action('Quadtree', self.toggle_quadtree_debug)
 
@@ -127,18 +138,6 @@ class App():
                 self.buffer = pg.Surface((e.x, e.y))
                 self.manager.set_window_resolution((e.x, e.y))
 
-            if e.type == spikeyboi.ui.file_dialog.UI_LOAD_FILE_EVENT:
-                res = e.file_path
-
-                print(f'Loading: {res}')
-                self.on_load(e.file_path)
-
-            if e.type == spikeyboi.ui.file_dialog.UI_SAVE_FILE_EVENT:
-                res = e.file_path
-                print(f'Saving: {res}')
-
-                self.on_save(e.file_path)
-
             if e.type == spikeyboi.ui.viewport.UI_AGENT_SELECTED:
                 spikeyboi.spikey.sim_instance.agent = e.agent
                 self.on_agent_selected(e.agent)
@@ -171,33 +170,75 @@ class App():
         self.dd_view.kernel_enabled = not self.dd_view.kernel_enabled
         self.spike_view.kernel_enabled = not self.spike_view.kernel_enabled
 
-    def show_load_dialog(self):
-        # default_path = 'sim.pickle'
-        # self.load_dialog = spikeyboi.ui.file_dialog.UIFileDialog(self.viewport.get_abs_rect(), self.manager, method='load')
+    def show_load_brain_dialog(self):
         x,y = 10,10
         w,h = self.size
-        self.load_dialog = spikeyboi.ui.file_dialog.UIFileDialog(pg.Rect(x,y,w,h), self.manager, method='load')
+        path = f'data/saves/brain/'
+        self.load_dialog = spikeyboi.ui.file_dialog.UIFileDialog(pg.Rect(x,y,w,h),
+                                                                self.manager,
+                                                                self.on_load_brain,
+                                                                method='load',
+                                                                initial_file_path=path)
 
-    def show_save_dialog(self):
-        # default_path = 'sim.pickle'
-        # self.save_dialog = spikeyboi.ui.file_dialog.UIFileDialog(self.viewport.get_abs_rect(), self.manager, method='save')
+    def show_save_brain_dialog(self):
         x,y = 10,10
         w,h = self.size
-        self.save_dialog = spikeyboi.ui.file_dialog.UIFileDialog(pg.Rect(x,y,w,h), self.manager, method='save')
+        agent = spikeyboi.spikey.sim_instance.agent
+        path = f'data/saves/brain/agent_{agent.id}.pickle'
+        self.save_dialog = spikeyboi.ui.file_dialog.UIFileDialog(pg.Rect(x,y,w,h),
+                                                                self.manager,
+                                                                self.on_save_brain,
+                                                                method='save',
+                                                                initial_file_path=path)
+
+    def show_load_sim_dialog(self):
+        x,y = 10,10
+        w,h = self.size
+        path = f'data/saves/sim/'
+        self.load_dialog = spikeyboi.ui.file_dialog.UIFileDialog(pg.Rect(x,y,w,h),
+                                                                self.manager,
+                                                                self.on_load_sim,
+                                                                method='load',
+                                                                initial_file_path=path)
+
+    def show_save_sim_dialog(self):
+        x,y = 10,10
+        w,h = self.size
+        agent = spikeyboi.spikey.sim_instance.agent
+        path = f'data/saves/sim/sim-{datetime.datetime.utcnow()}.pickle'
+        self.save_dialog = spikeyboi.ui.file_dialog.UIFileDialog(pg.Rect(x,y,w,h),
+                                                                self.manager,
+                                                                self.on_save_sim,
+                                                                method='save',
+                                                                initial_file_path=path)
 
     def new_brain(self):
         spikeyboi.spikey.sim_instance.agent.brain.reset()
 
-    def on_load(self, path):
-        for e in self.on_load_event:
+    def on_load_brain(self, path):
+        for e in self.on_load_brain_event:
             e(path)
 
-        for e in self.on_load_completed_event:
+        for e in self.on_load_brain_completed_event:
             e()
 
-    def on_save(self, path):
-        for e in self.on_save_event:
+    def on_save_brain(self, path):
+        for e in self.on_save_brain_event:
             e(path)
+
+    def reset_sim(self):
+        size = self.size
+
+        self.viewport.kill()
+        del self.viewport
+
+        self.viewport = spikeyboi.ui.viewport.UIViewport(pg.Rect((0,0),(size[0], size[1] - 30)), self.manager, anchors={'top_target': self.menubar})
+
+    def on_load_sim(self, path):
+        pass
+
+    def on_save_sim(self, path):
+        pass
 
     def on_agent_selected(self, agent):
         for e in self.on_agent_selected_event:

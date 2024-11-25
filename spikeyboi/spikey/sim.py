@@ -86,8 +86,8 @@ class Simulation():
         self.quadtree = spikeyboi.spikey.quadtree.QuadTree(list(self.physics_group), self.rect, 3)
         self.physics = spikeyboi.spikey.physics.Physics(self.physics_group)
 
-        self.app.on_save_event.append(self.on_save)
-        self.app.on_load_event.append(self.on_load)
+        self.app.on_save_brain_event.append(self.on_save_brain)
+        self.app.on_load_brain_event.append(self.on_load_brain)
 
         self.debug_physics = False
         self.debug_quadtree = False
@@ -135,12 +135,12 @@ class Simulation():
 
         food_source.pos = (x,y)
 
-    def on_save(self, path):
+    def on_save_brain(self, path):
         with open(path, 'wb') as fp:
             pickle.dump(self.rng_seed, fp)
             pickle.dump(self.agent.brain, fp)
 
-    def on_load(self, path):
+    def on_load_brain(self, path):
         with open(path, 'rb') as fp:
             rng_seed = pickle.load(fp)
             spikeyboi.spikey.random = np.random.default_rng(rng_seed)
