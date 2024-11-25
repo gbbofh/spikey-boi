@@ -39,7 +39,7 @@ class App():
         self.display = pg.display.set_mode(size)
         pg.display.set_caption(title)
 
-        theme = gui.PackageResource('data.themes', 'default.json')
+        theme = gui.PackageResource('res.themes', 'default.json')
 
         self.manager = gui.UIManager(size, theme)
 

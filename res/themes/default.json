@@ -44,7 +44,7 @@
          {
              "normal_image":
              {
-                 "package": "data.images",
+                 "package": "res.images",
                  "resource": "play_arrow_16x16.png"
              }
          }
@@ -59,7 +59,7 @@
          {
              "normal_image":
              {
-                 "package": "data.images",
+                 "package": "res.images",
                  "resource": "pause_16x16.png"
              }
          }
@@ -70,7 +70,7 @@
          {
              "normal_image":
              {
-                 "package": "data.images",
+                 "package": "res.images",
                  "resource": "settings_16x16.png"
              }
          }
