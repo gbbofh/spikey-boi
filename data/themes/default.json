@@ -63,5 +63,16 @@
                  "resource": "pause_16x16.png"
              }
          }
+     },
+     "#settings":
+     {
+         "images":
+         {
+             "normal_image":
+             {
+                 "package": "data.images",
+                 "resource": "settings_16x16.png"
+             }
+         }
      }
  }
