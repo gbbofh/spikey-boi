@@ -35,7 +35,18 @@ class Agent(pg.sprite.Sprite):
         # self.brain = spikeyboi.spikey.brain.Brain(50, 7, 2)
         self.brain = spikeyboi.spikey.brain.Brain(30, 10, 2)
         self.on_agent_moved_event = []
-        self.ray_angles = np.array([np.pi / 3, np.pi / 6, np.pi / 12, 0, -np.pi / 12, -np.pi / 6, -np.pi / 3])
+        self.ray_angles = np.array([
+            np.pi / 3, 
+            np.pi / 6,
+            np.pi / 12,
+            0,
+            -np.pi / 12,
+            -np.pi / 6,
+            -np.pi / 3
+        ])
+
+        self.ray_angles[:] /= 2
+        self.ray_angles[1:-1] /= 2
 
         # For reward modulation
         self.prev_x = self.x
@@ -51,6 +62,10 @@ class Agent(pg.sprite.Sprite):
         self.S = lambda x,s: 0.5 / (1 + np.exp(s * (x - 0.8)))
         self.id = 0
         self.food_consumed = 0
+
+        self.hit_food = False
+        self.hit_agent = False
+        self.hit_wall = False
 
     def _make_rotation_matrix(self):
         m = [
@@ -74,6 +89,8 @@ class Agent(pg.sprite.Sprite):
 
             ray_length = np.max(spikeyboi.spikey.sim_instance.size)
 
+            # TODO: Eventually rework this to use cast cone?
+            # hit = sim.physics.cast_cone(center, dir_plus, np.pi/6, ray_length, exclude={self})
             hit = sim.physics.cast_ray(center, dir_plus, ray_length, exclude={self})
             self.hits.append(hit)
 
@@ -176,7 +193,7 @@ class Agent(pg.sprite.Sprite):
 
         return angle * np.sign(c)
 
-    def on_collision(self, other, rel_pos):
+    def on_collision(self, other, normal):
         if type(other) == spikeyboi.spikey.food.Food:
             self.food_consumed += 1
             self.brain.inputs[Agent.FOUND_FOOD_ID] += 0.2
@@ -193,15 +210,29 @@ class Agent(pg.sprite.Sprite):
             ltd = self.brain.output_first if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_last
             ltp = self.brain.output_last if self.brain.outputs[0] > self.brain.outputs[1] else self.brain.output_first
 
-            if rel_pos is not None:
-                dx, dy = np.abs(rel_pos)
+            if normal is not None:
 
-                if dx < dy:
-                    self.brain.inputs[Agent.WALL_HIT_L_ID] += 0.2
-                    self.brain.rewards[Agent.WALL_HIT_L_ID] += 0.3
+                # negative of the collision normal should be a vector from
+                # the agent, to the collision point
+                normal = np.array(normal).astype(np.float64)
+
+                mag = np.linalg.norm(normal)
+                normal /= mag
+
+                angle = self.angle - np.pi / 2
+                right = np.array((np.cos(angle), -np.sin(angle)))
+
+                dot = np.dot(right, normal)
+                c = right[0] * normal[1] - right[1] * normal[0]
+
+                dir = dot * np.sign(c)
+
+                if dir < 0:
+                    self.brain.inputs[Agent.WALL_HIT_L_ID] += 0.3
+                    self.brain.rewards[Agent.WALL_HIT_L_ID] += 0.002
                 else:
-                    self.brain.inputs[Agent.WALL_HIT_R_ID] += 0.2
-                    self.brain.rewards[Agent.WALL_HIT_R_ID] += 0.3
+                    self.brain.inputs[Agent.WALL_HIT_R_ID] += 0.3
+                    self.brain.rewards[Agent.WALL_HIT_R_ID] += 0.002
 
             mask = self.distances > 0
             r = self.brain.rewards[:len(self.distances)]
@@ -220,5 +251,11 @@ class Agent(pg.sprite.Sprite):
             self.brain.rewards[postsyn] -= 0.02 * spikeyboi.spikey.sim_instance.fixed_delta_time
 
     def debug_draw(self, surface):
-        pass
+        angle = self.angle - np.pi / 2
+        r = np.array((50 * np.cos(angle), -50 * np.sin(angle)))
+
+        rx, ry = r.astype(np.int32)
+
+        x, y = self.rect.center
+        pg.draw.line(surface, (100, 100, 255), self.rect.center, (x + rx, y + ry))
 

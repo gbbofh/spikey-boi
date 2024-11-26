@@ -44,8 +44,8 @@ class Simulation():
         for i in range(num_agents):
             a = spikeyboi.spikey.agent.Agent(self.agent_group, self.physics_group, self.all_entities, self.render_list)
             a.id = i
-            a.x = spikeyboi.spikey.random.integers(60, w - 60)
-            a.y = spikeyboi.spikey.random.integers(60, h - 60)
+            a.x = spikeyboi.spikey.random.integers(70, w - 70)
+            a.y = spikeyboi.spikey.random.integers(70, h - 70)
             a.rect.topleft = a.x, a.y
             a.angle = spikeyboi.spikey.random.uniform(0, 2 * np.pi)
             self.agent = a
@@ -65,7 +65,7 @@ class Simulation():
         # self.food_source = spikeyboi.spikey.food_source.FoodSource(food_source_pos, 50, 50, -1.0, self.food_group, self.all_entities, self.physics_group, self.render_list)
         # self.food_source.on_lifetime_exceeded_event.append(self.on_food_source_lifetime_exceeded)
 
-        spawn_rect = pg.Rect((60, 60, w - 60, h - 60))
+        spawn_rect = pg.Rect((70, 70, w - 70, h - 70))
         self.food_spawner = spikeyboi.spikey.food_spawner.FoodSpawner(spawn_rect, spawn_rate=3)
         self.all_entities.add(self.food_spawner)
 
@@ -73,10 +73,10 @@ class Simulation():
 
         w,h = size
 
-        north = spikeyboi.spikey.wall.Wall((0,0,w,wall_thickness))
-        east = spikeyboi.spikey.wall.Wall((w - wall_thickness,0,wall_thickness,h))
-        south = spikeyboi.spikey.wall.Wall((0,h - wall_thickness,w,wall_thickness))
-        west = spikeyboi.spikey.wall.Wall((0,0,wall_thickness,h))
+        north = spikeyboi.spikey.wall.Wall((5,5,w - 10,wall_thickness))
+        east = spikeyboi.spikey.wall.Wall((w - wall_thickness - 5,5,wall_thickness,h - 25))
+        south = spikeyboi.spikey.wall.Wall((5,h - wall_thickness - 15,w - 10,wall_thickness - 5))
+        west = spikeyboi.spikey.wall.Wall((5,5,wall_thickness,h - 25))
         self.walls = [north, east, south, west]
 
         self.render_list.add(self.walls)
@@ -128,6 +128,9 @@ class Simulation():
 
         if self.debug_quadtree:
             self.quadtree.debug_draw(surface)
+
+        for agent in self.agent_group:
+            agent.debug_draw(surface)
 
     def on_food_source_lifetime_exceeded(self, food_source):
         x = spikeyboi.spikey.random.uniform(0, 1) * self.size[0]

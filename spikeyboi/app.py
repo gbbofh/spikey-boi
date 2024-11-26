@@ -6,9 +6,10 @@ import spikeyboi.ui.delta_debug
 import spikeyboi.ui.synapse_debug
 import spikeyboi.ui.reward_debug
 import spikeyboi.ui.eligibility_debug
-import spikeyboi.ui.dendrogram_debug
 import spikeyboi.ui.spike_debug
 import spikeyboi.ui.firing_rate_debug
+import spikeyboi.ui.dendrogram_debug
+import spikeyboi.ui.communities_debug
 import spikeyboi.ui.fps_debug
 import spikeyboi.ui.agent_info
 import spikeyboi.ui.file_dialog
@@ -50,7 +51,7 @@ class App():
             'Agent': ['New Brain', 'Load Brain', 'Save Brain'],
             'Simulation': ['Reset Sim', 'Load Sim', 'Save Sim'],
             'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Spikes', 'Firing Rates', 'Toggle Blur'],
-            'Analyze': ['Dendrogram', 'Louvain Communities'],
+            'Analyze': ['Dendrogram', 'Louvain'],
             'Debug': ['Physics', 'Quadtree', 'Toggle FPS']
         }
 
@@ -77,6 +78,7 @@ class App():
 
         # Analysis options
         self.menubar.bind_action('Dendrogram', lambda: self.toggle_window(self.dendro_view))
+        self.menubar.bind_action('Louvain', lambda: self.toggle_window(self.community_view))
 
         # Debug options
         self.menubar.bind_action('Physics', self.toggle_physics_debug)
@@ -101,8 +103,8 @@ class App():
         self.firing_rate_view = spikeyboi.ui.firing_rate_debug.UIFiringRateDebugger('Firing Rates', (100,100,200,200), self.manager)
 
         self.dendro_view = spikeyboi.ui.dendrogram_debug.UIDendrogramDebugger('Dendrogram', (100,100,300,200), self.manager)
+        self.community_view = spikeyboi.ui.communities_debug.UICommunitiesDebugger('Communities', (100,100,300,200), self.manager)
 
-        # self.fps_debug = spikeyboi.ui.fps_debug.UIFPSDebugger((-100,5), self.manager)
         widget_container = self.menubar.get_widget_container()
 
         self.fps_debug = spikeyboi.ui.fps_debug.UIFPSDebugger((-60,0),
