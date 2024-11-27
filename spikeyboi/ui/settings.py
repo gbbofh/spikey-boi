@@ -13,6 +13,8 @@ class UISettingsWindow(gui.elements.UIWindow):
 
         self.save_callback = save_callback
 
+        self.config = self.load()
+
         container = self.get_container()
         size = container.get_size()
 
@@ -39,7 +41,27 @@ class UISettingsWindow(gui.elements.UIWindow):
         sim_tab_id = self.tabs.add_tab('Simulation', '#sim_tab')
         sim_tab = self.tabs.get_tab_container(sim_tab_id)
 
-        self.config = self.load()
+        sim_settings = self.config['settings']['simulation']
+
+        w,h = sim_tab.get_container().get_size()
+        rect = pg.Rect(0,0,w // 2,h)
+
+        agent_panel = gui.elements.UIPanel(rect, manager=manager,
+                                            container=sim_tab,
+                                            parent_element=sim_tab)
+
+        label = gui.elements.UILabel((0,0), 'Max Agents:',
+                                    manager=manager,
+                                    container=agent_panel,
+                                    parent_element=agent_panel)
+        rect = pg.Rect(0,0,50,25)
+        text_box = gui.elements.UITextEntryLine(rect, manager=manager,
+                                                container=agent_panel,
+                                                parent_element=agent_panel,
+                                                anchors={'left_target':label})
+
+        text_box.set_text(str(sim_settings['num-agents']))
+        self.num_agents = text_box
 
     def load(self):
         conf = gui.core.utility.create_resource_path('data/config.json')
@@ -49,14 +71,19 @@ class UISettingsWindow(gui.elements.UIWindow):
         return data
 
     def save(self):
+        sim_settings = self.config['settings']['simulation']
+        sim_settings['num-agents'] = int(self.num_agents.get_text())
+
         conf = gui.core.utility.create_resource_path('data/config.json')
         with open(conf, 'w') as fp:
-            json.dump(self.config, fp)
+            json.dump(self.config, fp, indent=4)
 
     def process_event(self, e):
         if e.type == gui.UI_BUTTON_PRESSED and e.ui_element == self.button_save:
-            self.kill()
+            self.save()
             self.save_callback(self.config)
+            self.kill()
+            pg.event.post(pg.event.Event(gui.UI_WINDOW_CLOSE, {'ui_element': self}))
         elif e.type == gui.UI_BUTTON_PRESSED and e.ui_element == self.button_cancel:
             self.kill()
             pg.event.post(pg.event.Event(gui.UI_WINDOW_CLOSE, {'ui_element': self}))
