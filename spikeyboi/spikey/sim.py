@@ -19,13 +19,13 @@ import spikeyboi.spikey.wall
 
 class Simulation():
 
-    def __init__(self, size=(800,600), num_agents=8):
+    def __init__(self, size=(800,600), num_agents=5):
         spikeyboi.spikey.sim_instance = self
         self.app = spikeyboi.app_instance
 
         self.time = 0.0
         self.fixed_delta_time = 0.03
-        self.background_color = np.zeros(3)
+        self.background_color = np.zeros(4)
         self.rect = pg.Rect((0,0),size)
         self.size = size
 
@@ -91,6 +91,7 @@ class Simulation():
 
         self.debug_physics = False
         self.debug_quadtree = False
+        self.debug_agents = False
 
     def update(self, time_delta):
         # self.time += time_delta
@@ -119,8 +120,8 @@ class Simulation():
         self.size = self.rect.size
 
         pos = self.agent.rect.center
-        pg.draw.circle(surface, (200,50,100,10), pos, 20)
-
+        pg.draw.circle(surface, (200,50,100,100), pos, 20)
+ 
         self.render_list.draw(surface)
 
         if self.debug_physics:
@@ -129,8 +130,9 @@ class Simulation():
         if self.debug_quadtree:
             self.quadtree.debug_draw(surface)
 
-        for agent in self.agent_group:
-            agent.debug_draw(surface)
+        if self.debug_agents:
+            for agent in self.agent_group:
+                agent.debug_draw(surface)
 
     def on_food_source_lifetime_exceeded(self, food_source):
         x = spikeyboi.spikey.random.uniform(0, 1) * self.size[0]

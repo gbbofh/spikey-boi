@@ -434,12 +434,12 @@ class Physics():
                 outcode2 = get_outcode(x, y)
 
     def debug_draw(self, surf):
-        color = (250,100,100)
+        color = (250,100,100,100)
         for obj in self.objects:
             pg.draw.rect(surf, color, obj.rect, 1)
 
         for obj in self._ray_objects:
-            pg.draw.line(surf, (100,100,250), obj[0], obj[1], 3)
+            pg.draw.line(surf, (100,100,250,100), obj[0], obj[1], 3)
 
         # This causes flickering because raycasting happens on a fixed tick -- need to determine
         # a way to prevent this flickering from occuring.

@@ -3,7 +3,7 @@ import pygame as pg
 
 class QuadTree():
 
-    def __init__(self, items, rect, depth=1,color=(200,50,100)):
+    def __init__(self, items, rect, depth=1,color=(200,50,100,100)):
         rect = pg.Rect(rect)
         self.bounding_rect = rect
 
@@ -87,16 +87,16 @@ class QuadTree():
         height = rect.height // 2
 
         if items_ne:
-            self.ne = QuadTree(items_ne, (cx, rect.top, width, height), depth, color=(50, 100, 200))
+            self.ne = QuadTree(items_ne, (cx, rect.top, width, height), depth, color=(50, 100, 200,100))
             self.ne.parent = self
         if items_se:
-            self.se = QuadTree(items_se, (cx, cy, width, height), depth, color=(50, 200, 100))
+            self.se = QuadTree(items_se, (cx, cy, width, height), depth, color=(50, 200, 100,100))
             self.se.parent = self
         if items_nw:
-            self.nw = QuadTree(items_nw, (rect.left, rect.top, width, height), depth, color=(200, 100, 200))
+            self.nw = QuadTree(items_nw, (rect.left, rect.top, width, height), depth, color=(200, 100, 200,100))
             self.nw.parent = self
         if items_sw:
-            self.sw = QuadTree(items_sw, (rect.left, cy, width, height), depth, color=(200, 200, 100))
+            self.sw = QuadTree(items_sw, (rect.left, cy, width, height), depth, color=(200, 200, 100,100))
             self.sw.parent = self
 
     def get_container_of(self, item):
