@@ -31,8 +31,9 @@ class UIViewport(gui.elements.UIPanel):
         super().update(delta_time)
 
         self.buffer.fill((0,0,0,0))
-        self.sim_surf.image.fill((0,0,0,0))
         self.sim.draw(self.buffer)
+
+        self.sim_surf.image.fill((0,0,0,255))
         self.sim_surf.image.blit(self.buffer, (0,0))
 
     def fixed_update(self, fixed_delta):

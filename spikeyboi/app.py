@@ -52,7 +52,7 @@ class App():
             'Simulation': ['Reset Sim', 'Load Sim', 'Save Sim'],
             'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Spikes', 'Firing Rates', 'Toggle Blur'],
             'Analyze': ['Dendrogram', 'Louvain'],
-            'Debug': ['Physics', 'Quadtree', 'Toggle FPS']
+            'Debug': ['Physics', 'Quadtree', 'Agents', 'Toggle FPS']
         }
 
         self.menubar = spikeyboi.ui.menubar.UIMenuBar(pg.Rect((0,0),(size[0],50)), self.manager, menubar_data)
@@ -83,6 +83,7 @@ class App():
         # Debug options
         self.menubar.bind_action('Physics', self.toggle_physics_debug)
         self.menubar.bind_action('Quadtree', self.toggle_quadtree_debug)
+        self.menubar.bind_action('Agents', self.toggle_agent_debug)
         self.menubar.bind_action('Toggle FPS', lambda: self.toggle_window(self.fps_debug))
 
         self.toolbar_play = self.menubar.add_toolbar_button('#run', self.toolbar_play_pressed)
@@ -152,13 +153,16 @@ class App():
     def toggle_quadtree_debug(self):
         spikeyboi.spikey.sim_instance.debug_quadtree = not spikeyboi.spikey.sim_instance.debug_quadtree
 
+    def toggle_agent_debug(self):
+        spikeyboi.spikey.sim_instance.debug_agents = not spikeyboi.spikey.sim_instance.debug_agents
+
     def process_events(self):
         for e in pg.event.get():
             if e.type == pg.QUIT:
                 self.run = False
 
             if e.type == pg.WINDOWSIZECHANGED:
-                self.buffer = pg.Surface((e.x, e.y))
+                self.buffer = pg.Surface((e.x, e.y), pg.SRCALPHA)
                 self.manager.set_window_resolution((e.x, e.y))
 
             if e.type == spikeyboi.ui.viewport.UI_AGENT_SELECTED:
@@ -257,7 +261,9 @@ class App():
         self.viewport.kill()
         del self.viewport
 
-        self.viewport = spikeyboi.ui.viewport.UIViewport(pg.Rect((0,0),(size[0], size[1] - 30)), self.manager, anchors={'top_target': self.menubar})
+        self.viewport = spikeyboi.ui.viewport.UIViewport(pg.Rect((0,0),(size[0], size[1] - 30)),
+                                                        self.manager,
+                                                        anchors={'top_target': self.menubar})
 
     def on_load_sim(self, path):
         pass
