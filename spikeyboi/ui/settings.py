@@ -55,4 +55,9 @@ class UISettingsWindow(gui.elements.UIWindow):
 
     def process_event(self, e):
         if e.type == gui.UI_BUTTON_PRESSED and e.ui_element == self.button_save:
+            self.kill()
             self.save_callback(self.config)
+        elif e.type == gui.UI_BUTTON_PRESSED and e.ui_element == self.button_cancel:
+            self.kill()
+            pg.event.post(pg.event.Event(gui.UI_WINDOW_CLOSE, {'ui_element': self}))
+        return super().process_event(e)
