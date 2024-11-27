@@ -12,6 +12,7 @@ import spikeyboi.ui.dendrogram_debug
 import spikeyboi.ui.communities_debug
 import spikeyboi.ui.fps_debug
 import spikeyboi.ui.agent_info
+import spikeyboi.ui.agent_vision
 import spikeyboi.ui.file_dialog
 import spikeyboi.ui.settings
 
@@ -50,9 +51,9 @@ class App():
         menubar_data = {
             'Agent': ['New Brain', 'Load Brain', 'Save Brain'],
             'Simulation': ['Reset Sim', 'Load Sim', 'Save Sim'],
-            'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Spikes', 'Firing Rates', 'Toggle Blur'],
+            'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Spikes', 'Firing Rates', 'Agent Vision'],
             'Analyze': ['Dendrogram', 'Louvain'],
-            'Debug': ['Physics', 'Quadtree', 'Agents', 'Toggle FPS']
+            'Debug': ['Physics', 'Quadtree', 'Agents', 'Toggle FPS', 'Toggle Blur']
         }
 
         self.menubar = spikeyboi.ui.menubar.UIMenuBar(pg.Rect((0,0),(size[0],50)), self.manager, menubar_data)
@@ -74,7 +75,7 @@ class App():
         self.menubar.bind_action('Eligibility', lambda: self.toggle_window(self.ed_view))
         self.menubar.bind_action('Spikes', lambda: self.toggle_window(self.spike_view))
         self.menubar.bind_action('Firing Rates', lambda: self.toggle_window(self.firing_rate_view))
-        self.menubar.bind_action('Toggle Blur', self.toggle_kernels)
+        self.menubar.bind_action('Agent Vision', lambda: self.toggle_window(self.agent_eye_view))
 
         # Analysis options
         self.menubar.bind_action('Dendrogram', lambda: self.toggle_window(self.dendro_view))
@@ -85,6 +86,7 @@ class App():
         self.menubar.bind_action('Quadtree', self.toggle_quadtree_debug)
         self.menubar.bind_action('Agents', self.toggle_agent_debug)
         self.menubar.bind_action('Toggle FPS', lambda: self.toggle_window(self.fps_debug))
+        self.menubar.bind_action('Toggle Blur', self.toggle_kernels)
 
         self.toolbar_play = self.menubar.add_toolbar_button('#run', self.toolbar_play_pressed)
         self.toolbar_pause = self.menubar.add_toolbar_button('#pause', self.toolbar_pause_pressed)
@@ -102,6 +104,7 @@ class App():
         self.ed_view = spikeyboi.ui.eligibility_debug.UIEligibilityDebugger('Reward Eligibility', (100,100,200,200), self.manager)
         self.spike_view = spikeyboi.ui.spike_debug.UISpikeDebugger('Spikes', (100,100,200,200), self.manager)
         self.firing_rate_view = spikeyboi.ui.firing_rate_debug.UIFiringRateDebugger('Firing Rates', (100,100,200,200), self.manager)
+        self.agent_eye_view = spikeyboi.ui.agent_vision.UIAgentVisionDebugger('Agent Vision', (100,100,200,200), self.manager)
 
         self.dendro_view = spikeyboi.ui.dendrogram_debug.UIDendrogramDebugger('Dendrogram', (100,100,300,200), self.manager)
         self.community_view = spikeyboi.ui.communities_debug.UICommunitiesDebugger('Communities', (100,100,300,200), self.manager)
