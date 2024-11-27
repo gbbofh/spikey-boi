@@ -110,8 +110,9 @@ class Agent(pg.sprite.Sprite):
 
                     postsyn = self.brain.net.P_post < 0.01
                     self.brain.rewards[postsyn] -= 0.01 * fixed_delta
+
                 elif type(obj) is spikeyboi.spikey.agent.Agent:
-                    self.input_scale[i] = 5
+                    self.input_scale[i] = 4
                     self.sigmoid_scale[i] = 0.6
                     self.brain.rewards[i,:] += 0.04 * fixed_delta
 
@@ -120,10 +121,11 @@ class Agent(pg.sprite.Sprite):
 
                     postsyn = self.brain.net.P_post < 0.01
                     self.brain.rewards[postsyn] -= 0.01 * fixed_delta
+
                 elif type(obj) is spikeyboi.spikey.wall.Wall:
                     self.input_scale[i] = 3
                     self.sigmoid_scale[i] = 0.4
-                    self.brain.rewards[i,:] += 0.02 * fixed_delta
+                    self.brain.rewards[i,:] -= 0.02 * fixed_delta
 
                     presyn = self.brain.net.P_pre > 0.2
                     presyn = presyn[i]
@@ -131,7 +133,7 @@ class Agent(pg.sprite.Sprite):
 
                     postsyn = self.brain.net.P_post < 0.01
                     postsyn = postsyn[i]
-                    self.brain.rewards[postsyn,i] += 0.02 * fixed_delta
+                    self.brain.rewards[postsyn,i] -= 0.02 * fixed_delta
 
         deltas = self.distances - self.prev_distances
         self.prev_distances = self.distances
