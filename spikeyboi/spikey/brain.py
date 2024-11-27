@@ -15,7 +15,7 @@ class Brain():
 
     def __init__(self, num_neurons: int, num_inputs: int, num_outputs: int):
         self.num_neurons = num_neurons
-        self.num_inputs = num_neurons
+        self.num_inputs = num_inputs
         self.num_outputs = num_outputs
 
         self.net = spikeyboi.snn.network.Network(num_neurons, params=Brain.params)
