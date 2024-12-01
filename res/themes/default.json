@@ -4,7 +4,7 @@
          "font": [
              {
                  "name": "noto-sans",
-                 "size": "14",
+                 "size": "24",
                  "regular_resource":
                  {
                      "package": "res.fonts",
@@ -13,7 +13,7 @@
              },
              {
                  "name": "noto-sans-symbols",
-                 "size": "14",
+                 "size": "24",
                  "regular_resource":
                  {
                      "package": "res.fonts",
@@ -22,7 +22,7 @@
              },
              {
                  "name": "noto-sans-symbols-2",
-                 "size": "14",
+                 "size": "24",
                  "regular_resource":
                  {
                      "package": "res.fonts",
@@ -31,7 +31,7 @@
              },
              {
                  "name": "noto-emoji",
-                 "size": "14",
+                 "size": "24",
                  "regular_resource":
                  {
                      "package": "res.fonts",

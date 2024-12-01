@@ -39,7 +39,9 @@ class App():
         self.fixed_delta_time = 0.04
         self.size = size
 
-        pg.init()
+        # pg.init()
+        pg.display.init()
+        pg.font.init()
 
         self.display = pg.display.set_mode(size)
         pg.display.set_caption(title)
@@ -47,14 +49,14 @@ class App():
         theme = gui.PackageResource('res.themes', 'default.json')
 
         self.manager = gui.UIManager(size, theme)
-        # self.manager.add_font_paths('noto-sans',
-        #                             'res/fonts/NotoSans.ttf')
-        # self.manager.add_font_paths('noto-sans-symbols',
-        #                             'res/fonts/NotoSansSymbols.ttf')
-        # self.manager.add_font_paths('noto-sans-symbols-2',
-        #                             'res/fonts/NotoSansSymbols2.ttf')
-        # self.manager.add_font_paths('noto-emoji',
-        #                             'res/fonts/NotoEmoji.ttf')
+        self.manager.add_font_paths('noto-sans',
+                                    'res/fonts/NotoSans.ttf')
+        self.manager.add_font_paths('noto-sans-symbols',
+                                    'res/fonts/NotoSansSymbols.ttf')
+        self.manager.add_font_paths('noto-sans-symbols-2',
+                                    'res/fonts/NotoSansSymbols2.ttf')
+        self.manager.add_font_paths('noto-emoji',
+                                    'res/fonts/NotoEmoji.ttf')
 
         # # self.manager.preload_fonts(['noto-sans', 'noto-sans-symbols', 'noto-sans-symbols-2', 'noto-emoji'])
         # self.manager.preload_fonts([
