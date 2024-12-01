@@ -70,6 +70,8 @@ class Agent(pg.sprite.Sprite):
     def fixed_update(self, fixed_delta):
         sim = spikeyboi.spikey.sim_instance
 
+        max_dist = np.linalg.norm(sim.size)
+
         if self.tick_count % Agent.VISION_UPDATE_TICKS == 0:
 
             for i, a in enumerate(self.angles):
@@ -77,8 +79,8 @@ class Agent(pg.sprite.Sprite):
                 dir = np.array((np.cos(angle), -np.sin(angle)))
 
                 origin = self.rect.center
-                dist = np.max(spikeyboi.spikey.sim_instance.size)
-                hit = sim.physics.cast_ray(origin, dir, dist, exclude={self})
+                # dist = np.max(spikeyboi.spikey.sim_instance.size)
+                hit = sim.physics.cast_ray(origin, dir, max_dist, exclude={self})
                 if hit:
                     obj, point, hit_dist = hit
 
@@ -96,8 +98,8 @@ class Agent(pg.sprite.Sprite):
 
                     scale = n[type(obj)]
                     input = m[type(obj)]
-                    self.inputs[i] = scale * self.S(hit_dist / dist, input)
-                    self.distances[i] = hit_dist / dist
+                    self.inputs[i] = scale * self.S(hit_dist / max_dist, input)
+                    self.distances[i] = hit_dist / max_dist
 
             left = self.inputs[:5].mean()
             right = self.inputs[-5:].mean()
