@@ -1,6 +1,35 @@
  {
      "defaults":
      {
+         "font": [
+             {
+                 "name": "noto-sans",
+                 "size": "14",
+                 "regular_resource":
+                 {
+                     "package": "res.fonts",
+                     "resource": "NotoSans.ttf"
+                 }
+             },
+             {
+                 "name": "noto-sans-symbols",
+                 "size": "14",
+                 "regular_resource":
+                 {
+                     "package": "res.fonts",
+                     "resource": "NotoSymbols.ttf"
+                 }
+             },
+             {
+                 "name": "noto-emoji",
+                 "size": "14",
+                 "regular_resource":
+                 {
+                     "package": "res.fonts",
+                     "resource": "NotoEmoji.ttf"
+                 }
+             }
+         ],
          "colours":
          {
              "normal_bg":"#45494e",
@@ -25,6 +54,14 @@
              "unfilled_bar":"#CCCCCC"
          }
      },
+     "@toolbar_button":
+     {
+         "font":
+         {
+             "name": "noto-sans-symbols-2",
+             "size": "24"
+         }
+     },
      "@menu_button":
      {
          "colors":
@@ -34,45 +71,12 @@
              "hovered_border": "#a1a1a1"
          }
      },
-     "#run":
-     {
-         "colours":
-         {
-         },
-
-         "images":
-         {
-             "normal_image":
-             {
-                 "package": "res.images",
-                 "resource": "play_arrow_16x16.png"
-             }
-         }
-     },
-     "#pause":
-     {
-         "colours":
-         {
-         },
-
-         "images":
-         {
-             "normal_image":
-             {
-                 "package": "res.images",
-                 "resource": "pause_16x16.png"
-             }
-         }
-     },
      "#settings":
      {
-         "images":
+         "font":
          {
-             "normal_image":
-             {
-                 "package": "res.images",
-                 "resource": "settings_16x16.png"
-             }
+             "name": "noto-sans-symbols",
+             "size": "24"
          }
      },
      "#agent_info":
@@ -81,5 +85,19 @@
          {
              "normal_border": "#00000000"
          }
-     }
+     },
+    "window.#toggle_depth":
+    {
+        "misc":
+        {
+            "shape": "rectangle",
+            "shadow_width": "0",
+            "border_width": "1",
+            "text_horiz_alignment_padding": "0"
+        },
+        "font": {
+            "name": "noto-sans-symbols",
+            "size": "14"
+        }
+    }
  }
