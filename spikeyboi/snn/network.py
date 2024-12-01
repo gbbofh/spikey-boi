@@ -16,6 +16,11 @@ class Network():
         'R_m': 10.0,
         'F_t': 15.0,
 
+        # SFA parameters
+        'tau_sfa': 200,
+        'sfa_subthreshold': 1e-3,
+        'sfa_spike': 0.2,
+
         # Synapse parameters
         'P_syn': 0.3,
         'P_syn_gen': 0.00005,
@@ -86,6 +91,10 @@ class Network():
 
         # membrane potential
         self.v_m = np.full(n_neurons, p.v_rest)
+
+        # spike-frequency adaptation
+        self.sfa = np.zeros(n_neurons)
+        self.dsfa = np.zeros(n_neurons)
 
         # manage excitatory / inhibitory neurons
         # without having to calculate using
@@ -181,9 +190,12 @@ class Network():
         mod = self.spike_buffer[:, 0] * self.neuron_type
         self.I_syn += np.dot(mod, self.w)
 
+        self.dsfa[:] = p.dt * (p.sfa_subthreshold * (self.v_m - p.v_rest) - self.sfa) / p.tau_sfa
+        self.sfa[:] += self.dsfa
+
         self.spikes[:] = 0
 
-        self.I_total[:] = self.I_ext + self.I_syn + self.I_inj
+        self.I_total[:] = self.I_ext + self.I_syn + self.I_inj - self.sfa
         I_total = self.I_total
         dv_m = (p.v_rest - self.v_m + p.R_m * I_total) * (p.dt / p.tau_m)
         self.v_m += dv_m
@@ -191,6 +203,7 @@ class Network():
         pspike = self.v_m >= p.v_threshold
         self.v_m[pspike] = p.v_reset
         self.spikes[pspike] = 1
+        self.dsfa[pspike] += p.sfa_spike
 
         self.spike_trace[:] = np.roll(self.spike_trace, -1)
         self.spike_trace[:, -1:] = self.spikes[:, np.newaxis]
