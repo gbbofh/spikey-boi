@@ -49,35 +49,19 @@ class App():
         theme = gui.PackageResource('res.themes', 'default.json')
 
         self.manager = gui.UIManager(size, theme)
-        self.manager.add_font_paths('noto-sans',
-                                    'res/fonts/NotoSans.ttf')
-        self.manager.add_font_paths('noto-sans-symbols',
-                                    'res/fonts/NotoSansSymbols.ttf')
-        self.manager.add_font_paths('noto-sans-symbols-2',
-                                    'res/fonts/NotoSansSymbols2.ttf')
-        self.manager.add_font_paths('noto-emoji',
-                                    'res/fonts/NotoEmoji.ttf')
+        # self.manager.add_font_paths('noto_sans',
+        #                             'res/fonts/NotoSans.ttf')
+        # self.manager.add_font_paths('noto_sans_symbols',
+        #                             'res/fonts/NotoSansSymbols.ttf')
+        # self.manager.add_font_paths('noto_sans_symbols_2',
+        #                             'res/fonts/NotoSansSymbols2.ttf')
+        # self.manager.add_font_paths('noto_emoji',
+        #                             'res/fonts/NotoEmoji.ttf')
 
-        # # self.manager.preload_fonts(['noto-sans', 'noto-sans-symbols', 'noto-sans-symbols-2', 'noto-emoji'])
-        # self.manager.preload_fonts([
-        #     {
-        #         'name': 'noto-sans',
-        #         'point_size': 14,
-        #         'style': 'regular',
-        #     },
-        #     {
-        #         'name': 'noto-sans-symbols',
-        #         'point_size': 14,
-        #         'style': 'regular',
-        #     },
-        #     {
-        #         'name': 'noto-emoji',
-        #         'point_size': 14,
-        #         'style': 'regular',
-        #     }
-        # ])
-
-        # self.manager.get_theme().get_font_dictionary().find_font(14, 'noto-sans')
+        # self.manager.preload_fonts([{'name': 'noto_sans', 'point_size': 24, 'style': 'regular'},
+        #                             {'name': 'noto_sans_symbols', 'point_size': 24, 'style': 'regular'},
+        #                             {'name': 'noto_sans_symbols_2', 'point_size': 24, 'style': 'regular'},
+        #                             {'name': 'noto_sans_symbols', 'point_size': 14, 'style': 'regular'}])
 
         menubar_data = {
             'Agent': ['New Brain', 'Load Brain', 'Save Brain'],
