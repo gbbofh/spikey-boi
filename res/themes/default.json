@@ -17,7 +17,16 @@
                  "regular_resource":
                  {
                      "package": "res.fonts",
-                     "resource": "NotoSymbols.ttf"
+                     "resource": "NotoSansSymbols.ttf"
+                 }
+             },
+             {
+                 "name": "noto-sans-symbols-2",
+                 "size": "14",
+                 "regular_resource":
+                 {
+                     "package": "res.fonts",
+                     "resource": "NotoSansSymbols2.ttf"
                  }
              },
              {
