@@ -47,6 +47,35 @@ class App():
         theme = gui.PackageResource('res.themes', 'default.json')
 
         self.manager = gui.UIManager(size, theme)
+        # self.manager.add_font_paths('noto-sans',
+        #                             'res/fonts/NotoSans.ttf')
+        # self.manager.add_font_paths('noto-sans-symbols',
+        #                             'res/fonts/NotoSansSymbols.ttf')
+        # self.manager.add_font_paths('noto-sans-symbols-2',
+        #                             'res/fonts/NotoSansSymbols2.ttf')
+        # self.manager.add_font_paths('noto-emoji',
+        #                             'res/fonts/NotoEmoji.ttf')
+
+        # # self.manager.preload_fonts(['noto-sans', 'noto-sans-symbols', 'noto-sans-symbols-2', 'noto-emoji'])
+        # self.manager.preload_fonts([
+        #     {
+        #         'name': 'noto-sans',
+        #         'point_size': 14,
+        #         'style': 'regular',
+        #     },
+        #     {
+        #         'name': 'noto-sans-symbols',
+        #         'point_size': 14,
+        #         'style': 'regular',
+        #     },
+        #     {
+        #         'name': 'noto-emoji',
+        #         'point_size': 14,
+        #         'style': 'regular',
+        #     }
+        # ])
+
+        # self.manager.get_theme().get_font_dictionary().find_font(14, 'noto-sans')
 
         menubar_data = {
             'Agent': ['New Brain', 'Load Brain', 'Save Brain'],
@@ -89,10 +118,14 @@ class App():
         self.menubar.bind_action('Toggle Blur', self.toggle_kernels)
 
         self.toolbar_play = self.menubar.add_toolbar_button('#run', self.toolbar_play_pressed)
+        self.toolbar_play.set_text('\u25b6')
+
         self.toolbar_pause = self.menubar.add_toolbar_button('#pause', self.toolbar_pause_pressed)
+        self.toolbar_pause.set_text('\u23f8')
 
         self.menubar.add_spacer(50)
         self.toolbar_settings = self.menubar.add_toolbar_button('#settings', self.toolbar_settings_pressed)
+        self.toolbar_settings.set_text('\u2699')
 
         self.toolbar_play.disable()
 
