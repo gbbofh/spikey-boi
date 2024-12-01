@@ -78,7 +78,7 @@ class UIMenuBar(pygame_gui.elements.UIPanel):
         button = pygame_gui.elements.UIButton(
             relative_rect=pygame.Rect((self.button_x, 0), (50, self.relative_rect.height - 5)),
             text='',
-            object_id=id,
+            object_id=pygame_gui.core.ObjectID(id, '@toolbar_button'),
             manager=self.ui_manager,
             container=self)
 
