@@ -39,7 +39,7 @@ class UIFiringRateDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         s = self.net.firing_rates
         s = np.outer(s[:, np.newaxis], s[np.newaxis, :]).astype(np.float64) * np.eye(self.net.num_neurons)
         s_max = np.max(s)
-        s /= s_max
+        s = s / s_max if s_max != 0 else s
 
         # values = w
         self.data[:] = self.alpha * s + (1 - self.alpha) * self.data
