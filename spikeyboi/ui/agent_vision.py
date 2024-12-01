@@ -16,8 +16,6 @@ class UIAgentVisionDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         super().__init__(*args, **kwargs)
         self.brain = self.sim.agent.brain
 
-        # First 7 inputs are raycast results
-        self.buffer = pg.Surface((self.brain.num_inputs - 3, self.brain.num_inputs - 3), pg.SRCALPHA)
         self.kernel = 1 / 16 * np.array([
             [ 1, 2, 1 ],
             [ 2, 4, 2 ],
@@ -27,10 +25,22 @@ class UIAgentVisionDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         self.kernel_enabled = True
         self.show_depth = True
 
-        self.data = np.zeros((self.brain.num_inputs - 3, self.brain.num_inputs - 3), dtype=np.float64)
         self.alpha = 1.0
 
         spikeyboi.app_instance.on_agent_selected_event.append(self.on_agent_selected)
+
+        # For upscaling / interpolation to higher resolution
+        self.scale_factor = 1
+
+        # First 7 inputs are raycast results
+        self.width = self.scale_factor * (self.brain.num_inputs - 3)
+        self.height = self.scale_factor * (self.brain.num_inputs - 3)
+
+        # self.buffer = pg.Surface((self.brain.num_inputs - 3, self.brain.num_inputs - 3), pg.SRCALPHA)
+        # self.data = np.zeros((self.brain.num_inputs - 3, self.brain.num_inputs - 3), dtype=np.float64)
+
+        self.buffer = pg.Surface((self.width,self.height), pg.SRCALPHA)
+        self.data = np.zeros((self.width, self.height), dtype=np.float64)
 
     def rebuild(self):
         super().rebuild()
@@ -87,15 +97,24 @@ class UIAgentVisionDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         if self.show_depth:
             self.raycast_3d(delta_time)
         else:
-            self.data[:] = self.brain.inputs[np.newaxis, :-3]
-        values = self.data.T / 0.8
+            agent = spikeyboi.spikey.sim_instance.agent
+
+            pix_count = agent.brain.num_inputs - 3
+            inds = np.arange(pix_count)
+            new_inds = np.linspace(0, pix_count - 1, self.height)
+
+            shade_interp = np.interp(new_inds, inds, agent.brain.inputs[:-3])
+            # self.data[:] = self.brain.inputs[np.newaxis, :-3]
+            self.data[:] = shade_interp[np.newaxis, :]
+        # values = self.data.T / 0.8
+        values = self.data.T
 
         # rgba = spikeyboi.ui.colormaps['zebra'](values)
         colorstops = [
             (0, (0,0,0,200)),
-            (0.2, (100, 100, 255, 200)),
-            (0.4, (255, 100, 100, 200)),
-            (0.5, (100, 255, 100, 200)),
+            (0.2, (100,100,255,200)),
+            (0.3, (255,100,100,200)),
+            (0.45, (100,255,100,200)),
         ]
         rgba = spikeyboi.ui.gradient_map(values, colorstops)
 
@@ -117,27 +136,38 @@ class UIAgentVisionDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
     def raycast_3d(self, delta_time):
         agent = spikeyboi.spikey.sim_instance.agent
 
-        inv_dist = 1 - agent.mean_distances
+        inds = np.arange(len(agent.mean_distances))
+        new_inds = np.linspace(0, len(agent.mean_distances) - 1, self.height)
 
-        wall_height = (inv_dist * 7).astype(np.int32)
+        dist_interp = np.interp(new_inds, inds, agent.mean_distances)
+        shade_interp = np.interp(new_inds, inds, agent.brain.inputs[:-3])
+
+        w = self.width
+        h = self.height
+
+        # inv_dist = 1 - agent.mean_distances
+        inv_dist = 1 - dist_interp
+
+        wall_height = (inv_dist * h).astype(np.int32)
         wall_height = np.maximum(wall_height, 1)
-        center_row = 7 // 2
+        center_row = h // 2
 
         start_rows = center_row - wall_height // 2
         end_rows = center_row + wall_height // 2
 
-        start_rows = np.clip(start_rows, 0, 7)
-        end_rows = np.clip(end_rows, 0, 7)
+        start_rows = np.clip(start_rows, 0, h)
+        end_rows = np.clip(end_rows, 0, h)
 
-        rows = np.arange(7).reshape(-1, 1)
-        cols = np.arange(7).reshape(1, -1)
+        rows = np.arange(h).reshape(-1, 1)
+        cols = np.arange(w).reshape(1, -1)
 
         start_rows = start_rows.reshape(1, -1)
         end_rows = end_rows.reshape(1, -1)
 
         mask = (rows >= start_rows) & (rows < end_rows)
 
-        shading = np.tile((self.brain.inputs[:7]).reshape(1,-1), (7, 1))
+        # shading = np.tile((self.brain.inputs[:-3]).reshape(1,-1), (h, 1))
+        shading = np.tile((shade_interp).reshape(1,-1), (h, 1))
         self.data[mask] = shading[mask]
 
     def on_load_completed(self):
