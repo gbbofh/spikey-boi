@@ -49,6 +49,9 @@ class UIViewport(gui.elements.UIPanel):
             h = 10
             rect = pg.Rect(x,y,w,h)
             objects = self.sim.quadtree.hit(rect)
+            # TODO: There is a bug where not all agents are being
+            # added to the quadtree correctly, until they first move --
+            # not sure why this may be
             for obj in objects:
                 if type(obj) is spikeyboi.spikey.agent.Agent:
                     event_data = {'pos': obj.rect.center, 'agent': obj}
