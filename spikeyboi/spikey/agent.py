@@ -144,7 +144,7 @@ class Agent(pg.sprite.Sprite):
                 normal = np.array(self.collision_normal).astype(np.float64)
 
                 mag = np.linalg.norm(normal)
-                normal /= mag
+                normal = normal / mag if mag != 0 else normal
 
                 angle = self.angle - np.pi / 2
                 right = np.array((np.cos(angle), -np.sin(angle)))
