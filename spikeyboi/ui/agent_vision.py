@@ -93,12 +93,11 @@ class UIAgentVisionDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
             self.toggle_depth_button.set_text('\u23e5')
 
     def on_update(self, delta_time):
+        agent = spikeyboi.spikey.sim_instance.agent
         self.data[:] = 0
         if self.show_depth:
             self.raycast_3d(delta_time)
         else:
-            agent = spikeyboi.spikey.sim_instance.agent
-
             pix_count = agent.brain.num_inputs - 3
             inds = np.arange(pix_count)
             new_inds = np.linspace(0, pix_count - 1, self.height)
@@ -110,11 +109,17 @@ class UIAgentVisionDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         values = self.data.T
 
         # rgba = spikeyboi.ui.colormaps['zebra'](values)
+        # colorstops = [
+        #     (0.0, (0,0,0,200)),
+        #     (0.2, (100,100,255,200)),
+        #     (0.3, (255,100,100,200)),
+        #     (0.45, (100,255,100,200)),
+        # ]
         colorstops = [
             (0, (0,0,0,200)),
-            (0.2, (100,100,255,200)),
-            (0.3, (255,100,100,200)),
-            (0.45, (100,255,100,200)),
+            (agent.WALL_SIGMOID_SCALE / 2, (100,100,255,200)),
+            (agent.AGENT_SIGMOID_SCALE / 2, (255,100,100,200)),
+            (agent.FOOD_SIGMOID_SCALE / 2, (100,255,100,200)),
         ]
         rgba = spikeyboi.ui.gradient_map(values, colorstops)
 
@@ -141,6 +146,7 @@ class UIAgentVisionDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
         dist_interp = np.interp(new_inds, inds, agent.mean_distances)
         shade_interp = np.interp(new_inds, inds, agent.brain.inputs[:-3])
+        ni = agent.brain.num_inputs - 3
 
         w = self.width
         h = self.height
