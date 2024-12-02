@@ -15,7 +15,8 @@ class UIHistogramDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         self.net = self.sim.agent.brain.net
 
         self.index = 0
-        self.max_index = 300
+        self.tick_count = 0
+        self.max_index = self.net.SPIKE_WINDOW
 
         self.buffer = pg.Surface((self.max_index, self.net.num_neurons), pg.SRCALPHA)
         self.data = np.zeros((self.max_index, self.net.num_neurons), dtype=np.float64)
@@ -26,6 +27,13 @@ class UIHistogramDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         spikeyboi.app_instance.on_agent_selected_event.append(self.on_agent_selected)
 
     def on_update(self, delta_time):
+        agent = spikeyboi.spikey.sim_instance.agent
+
+        self.tick_count = (self.tick_count + 1) % agent.UPDATE_TICKS_MAX
+
+        if self.tick_count % agent.UPDATE_TICKS_MAX:
+            return
+
         s = self.net.spikes
 
         self.data[self.index] = s
@@ -45,26 +53,34 @@ class UIHistogramDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
         self.index = (self.index + 1) % self.max_index
 
-    def process_event(self, e):
-        if e.type == gui.UI_WINDOW_RESIZED:
-            if e.ui_element == self:
-                w, h = self.get_abs_rect().size
-                if w / h > self.aspect_ratio:
-                    h = w / self.aspect_ratio
-                else:
-                    w = h * self.aspect_ratio
-                self.set_dimensions((w,h))
+    def fill_past_data(self):
+        for i in range(self.index):
+            n = self.net.SPIKE_WINDOW
+            self.data[i] = self.net.spike_trace[:, n - i - 1]
+        # self.data[:self.index] = self.net.spike_trace[:,-self.index:].T
 
-                self.on_update(0)
+    # def process_event(self, e):
+    #     if e.type == gui.UI_WINDOW_RESIZED:
+    #         if e.ui_element == self:
+    #             w, h = self.get_abs_rect().size
+    #             if w / h > self.aspect_ratio:
+    #                 h = w / self.aspect_ratio
+    #             else:
+    #                 w = h * self.aspect_ratio
+    #             self.set_dimensions((w,h))
 
-                return True
-        return super().process_event(e)
+    #             self.on_update(0)
+
+    #             return True
+    #     return super().process_event(e)
 
     def on_load_completed(self):
         self.net = self.sim.agent.brain.net
         self.data[:] = 0
+        self.fill_past_data()
 
     def on_agent_selected(self, agent):
         self.net = agent.brain.net
         self.data[:] = 0
+        self.fill_past_data()
         self.on_update(0)

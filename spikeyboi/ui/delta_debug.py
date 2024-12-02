@@ -15,9 +15,14 @@ class UIDeltaDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
         self.net = self.sim.agent.brain.net
 
         self.buffer = pg.Surface((self.net.num_neurons, self.net.num_neurons), pg.SRCALPHA)
-        self.kernel = np.array([
-            [ 0.25, 0.25, ],
-            [ 0.25, 0.25, ],
+        # self.kernel = np.array([
+        #     [ 0.25, 0.25, ],
+        #     [ 0.25, 0.25, ],
+        # ])
+        self.kernel = 1/16 * np.array([
+            [ 1,2,1 ],
+            [ 2,4,2 ],
+            [ 1,2,1 ],
         ])
 
         self.kernel_enabled = True
