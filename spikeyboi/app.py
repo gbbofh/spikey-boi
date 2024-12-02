@@ -14,6 +14,7 @@ import spikeyboi.ui.fps_debug
 import spikeyboi.ui.agent_info
 import spikeyboi.ui.agent_vision
 import spikeyboi.ui.file_dialog
+import spikeyboi.ui.histogram_debug
 import spikeyboi.ui.settings
 
 
@@ -67,7 +68,7 @@ class App():
             'Agent': ['New Brain', 'Load Brain', 'Save Brain'],
             'Simulation': ['Reset Sim', 'Load Sim', 'Save Sim'],
             'View': ['Synapses', 'Deltas', 'Rewards', 'Eligibility', 'Spikes', 'Firing Rates', 'Agent Vision'],
-            'Analyze': ['Dendrogram', 'Louvain'],
+            'Analyze': ['Dendrogram', 'Histogram', 'Louvain'],
             'Debug': ['Physics', 'Quadtree', 'Agents', 'Toggle FPS', 'Toggle Blur']
         }
 
@@ -95,6 +96,7 @@ class App():
         # Analysis options
         self.menubar.bind_action('Dendrogram', lambda: self.toggle_window(self.dendro_view))
         self.menubar.bind_action('Louvain', lambda: self.toggle_window(self.community_view))
+        self.menubar.bind_action('Histogram', lambda: self.toggle_window(self.histogram_view))
 
         # Debug options
         self.menubar.bind_action('Physics', self.toggle_physics_debug)
@@ -127,6 +129,7 @@ class App():
 
         self.dendro_view = spikeyboi.ui.dendrogram_debug.UIDendrogramDebugger('Dendrogram', (100,100,300,200), self.manager)
         self.community_view = spikeyboi.ui.communities_debug.UICommunitiesDebugger('Communities', (100,100,300,200), self.manager)
+        self.histogram_view = spikeyboi.ui.histogram_debug.UIHistogramDebugger('Spike Histogram', (100,100,300,200), self.manager)
 
         widget_container = self.menubar.get_widget_container()
 
