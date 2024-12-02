@@ -12,8 +12,19 @@ class Agent(pg.sprite.Sprite):
     WALL_HIT_R_ID = 8
     FOUND_FOOD_ID = 9
 
-    VISION_UPDATE_TICKS = 5
+    # VISION_UPDATE_TICKS = 5
+    # BRAIN_UPDATE_TICKS = 2
+    UPDATE_TICKS_MAX = 4
+    VISION_UPDATE_TICKS = 4
     BRAIN_UPDATE_TICKS = 2
+
+    FOOD_IN_SCALE = 5
+    AGENT_IN_SCALE = 4
+    WALL_IN_SCALE = 3
+
+    FOOD_SIGMOID_SCALE = 0.8 * 2
+    AGENT_SIGMOID_SCALE = 0.6 * 2
+    WALL_SIGMOID_SCALE = 0.4 * 2
 
     def __init__(self, *group: pg.sprite.Group):
         super().__init__(group)
@@ -85,15 +96,15 @@ class Agent(pg.sprite.Sprite):
                     obj, point, hit_dist = hit
 
                     m = {
-                        spikeyboi.spikey.food.Food: 5,
-                        spikeyboi.spikey.agent.Agent: 4,
-                        spikeyboi.spikey.wall.Wall: 3,
+                        spikeyboi.spikey.food.Food: Agent.FOOD_IN_SCALE,
+                        spikeyboi.spikey.agent.Agent: Agent.AGENT_IN_SCALE,
+                        spikeyboi.spikey.wall.Wall: Agent.WALL_IN_SCALE,
                     }
 
                     n = {
-                        spikeyboi.spikey.food.Food: 0.8,
-                        spikeyboi.spikey.agent.Agent: 0.6,
-                        spikeyboi.spikey.wall.Wall: 0.4,
+                        spikeyboi.spikey.food.Food: Agent.FOOD_SIGMOID_SCALE,
+                        spikeyboi.spikey.agent.Agent: Agent.AGENT_SIGMOID_SCALE,
+                        spikeyboi.spikey.wall.Wall: Agent.WALL_SIGMOID_SCALE,
                     }
 
                     scale = n[type(obj)]
@@ -234,7 +245,7 @@ class Agent(pg.sprite.Sprite):
         pg.draw.polygon(self.image, (255,255,255), v)
         self.mask = pg.mask.from_surface(self.image)
 
-        self.tick_count = (self.tick_count + 1) % 20
+        self.tick_count = (self.tick_count + 1) % Agent.UPDATE_TICKS_MAX
 
     def get_forward(self):
         return np.array([np.cos(self.angle), -np.sin(self.angle)])
