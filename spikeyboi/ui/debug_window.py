@@ -31,7 +31,15 @@ class UIDebugWindow(gui.elements.UIWindow):
         self.sim = spikeyboi.spikey.sim_instance
         self.kernel = None
 
+        self.original_rect = self.rect
+        self.aspect_ratio = self.rect.width / self.rect.height
+
         spikeyboi.app_instance.on_load_brain_completed_event.append(self.on_load_brain_completed)
+
+        # TODO: add methods for inserting buttons into the titlebar
+        # and override rebuild() so that they get drawn appropriately
+        # For reference, see the code in agent_vision.UIAgentVision
+        self.title_bar_buttons = []
 
     def update(self, delta_time):
         super().update(delta_time)
@@ -48,9 +56,21 @@ class UIDebugWindow(gui.elements.UIWindow):
     def process_event(self, e):
         if e.type == gui.UI_WINDOW_RESIZED:
             if e.ui_element == self:
-                nw, nh = self.get_abs_rect().size
-                ns = max(nw, nh)
-                self.set_dimensions((ns, ns))
+                w, h = self.get_abs_rect().size
+                if w / h > self.aspect_ratio:
+                    h = w / self.aspect_ratio
+                else:
+                    w = h * self.aspect_ratio
+                self.set_dimensions((w,h))
+
+                self.on_update(0)
+
+                return True
+        # if e.type == gui.UI_WINDOW_RESIZED:
+        #     if e.ui_element == self:
+        #         nw, nh = self.get_abs_rect().size
+        #         ns = max(nw, nh)
+        #         self.set_dimensions((ns, ns))
         return super().process_event(e)
 
     def on_load_brain_completed(self):
