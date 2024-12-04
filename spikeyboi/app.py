@@ -19,6 +19,7 @@ import spikeyboi.ui.settings
 
 
 import pickle
+import pathlib
 import datetime
 
 
@@ -152,6 +153,7 @@ class App():
         self.load_dialog = None
         self.save_dialog = None
         self.settings_dialog = None
+        self.conf_dialog = None
 
     def toolbar_play_pressed(self):
         self.toolbar_play.disable()
@@ -237,7 +239,7 @@ class App():
         x,y = 10,10
         w,h = self.size
         agent = spikeyboi.spikey.sim_instance.agent
-        path = f'data/saves/brain/agent_{agent.id}.pickle'
+        path = f'data/saves/brain/agent_{agent.id}-{datetime.datetime.utcnow()}.pickle'
         self.save_dialog = spikeyboi.ui.file_dialog.UIFileDialog(pg.Rect(x,y,w,h),
                                                                 self.manager,
                                                                 self.on_save_brain,
@@ -265,6 +267,11 @@ class App():
                                                                 self.on_save_sim,
                                                                 method='save',
                                                                 initial_file_path=path)
+
+    # def confirm_file_overwrite(self, path):
+    #     path = pathlib.Path(path)
+    #     if path.exists():
+    #         self.conf_dialog = spikeyboi.ui.confirmation_dialog.UIConfirmationDialog()
 
     def new_brain(self):
         spikeyboi.spikey.sim_instance.agent.brain.reset()

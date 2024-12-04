@@ -53,11 +53,13 @@ class UIHistogramDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
 
         self.index = (self.index + 1) % self.max_index
 
-    def fill_past_data(self):
-        for i in range(self.index):
-            n = self.net.SPIKE_WINDOW
-            self.data[i] = self.net.spike_trace[:, n - i - 1]
-        # self.data[:self.index] = self.net.spike_trace[:,-self.index:].T
+    # def fill_past_data(self):
+    #     for i in range(self.index):
+    #         trace_ind = (self.index - self.max_index + i) % self.max_index
+    #         self.data[i] = self.net.spike_trace[:, trace_ind]
+    #         # n = self.net.SPIKE_WINDOW
+    #         # self.data[i] = self.net.spike_trace[:, n - i - 1]
+    #     # self.data[:self.index] = self.net.spike_trace[:,-self.index:].T
 
     # def process_event(self, e):
     #     if e.type == gui.UI_WINDOW_RESIZED:
@@ -77,10 +79,12 @@ class UIHistogramDebugger(spikeyboi.ui.debug_window.UIDebugWindow):
     def on_load_completed(self):
         self.net = self.sim.agent.brain.net
         self.data[:] = 0
-        self.fill_past_data()
+        self.index = 0
+        # self.fill_past_data()
 
     def on_agent_selected(self, agent):
         self.net = agent.brain.net
         self.data[:] = 0
-        self.fill_past_data()
+        self.index = 0
+        # self.fill_past_data()
         self.on_update(0)
